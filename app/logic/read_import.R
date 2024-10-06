@@ -6,9 +6,10 @@ box::use(
           str_extract_all, str_extract,
           str_replace_all, str_replace], 
   openxlsx2[read_xlsx], 
-  dplyr[mutate, as_tibble, filter, 
-        rename, case_when, select, relocate],
-  tidyr[drop_na, unnest_wider]
+  dplyr[mutate, as_tibble, filter, arrange, row_number,
+        rename, case_when, select, relocate, group_by, ungroup],
+  tidyr[drop_na, unnest_wider], 
+  lubridate[ymd_hms]
 )
 
 #' Import collection data
@@ -38,13 +39,13 @@ read_import <- function(file) {
     privacy    = "可见性"
   )
   map(sheet_regex, \(x) {
-    sheets <- readxl::excel_sheets(file)
+    sheets <- excel_sheets(file)
     idx <- str_which(sheets, x)
     set_names(idx, sheets[idx])
   }) |> 
     reduce(c) |>
     imap(\(x, idx) {
-      openxlsx2::read_xlsx(file, sheet = x, type = meta_types) |> 
+      read_xlsx(file, sheet = x, type = meta_types) |> 
         mutate(status = idx) |>
         as_tibble() |> 
         rename(!!!rename_vec)
@@ -57,10 +58,16 @@ read_import <- function(file) {
         .default = url_extract
       ), 
       type = url_extract[, 2],
-      id = url_extract[, 3],
-    ) |>
+      subject_id = url_extract[, 3],
+      created_at = ymd_hms(created_at) 
+    ) |> 
+    group_by(type) |>
+    arrange(created_at) |>
+    mutate(id = row_number()) |>
     select(-url_extract) |> 
-    relocate(c(id, type), .before = title)
+    relocate(c(subject_id, type), .before = title) |>
+    relocate(id, .before = subject_id) |> 
+    ungroup()
 }
 
 #' @export
@@ -105,14 +112,14 @@ clean_import <- function(data, which = NULL) {
     data <- switch(
       which, 
       "movie" = data |> 
-        select(id, type, title, year, region, genre, director, 
+        select(id, subject_id, type, title, year, region, genre, director, 
                starring, status, rating, my_rating, 
                url, created_at), 
       "music" = data |> 
-        select(id, type, title, year, performer, status, rating,
+        select(id, subject_id, type, title, year, performer, status, rating,
                my_rating, url, created_at), 
       "book" = data |> 
-        select(id, type, title, year, author, publisher, 
+        select(id, subject_id, type, title, year, author, publisher, 
                status, rating, my_rating, url, created_at)
     )
     return(data)
@@ -135,7 +142,7 @@ clean_import <- function(data, which = NULL) {
         intro = str_replace(intro, "/?$", ""), 
         developer = str_extract(intro, "[^/]+$")
       ) |> 
-      select(id, type, title, status, category, developer, 
+      select(id, subject_id, type, title, status, category, developer, 
              release, rating, my_rating, url, created_at)
     return(data)
   }
