@@ -47,7 +47,7 @@ read_import <- function(file) {
   }) |> 
     reduce(c) |>
     imap(\(x, idx) {
-      read_xlsx(file, sheet = x, type = meta_types) |> 
+      suppressWarnings(read_xlsx(file, sheet = x, type = meta_types)) |> 
         mutate(status = idx) |>
         as_tibble() |> 
         rename(!!!rename_vec)
