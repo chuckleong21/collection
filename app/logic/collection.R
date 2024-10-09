@@ -1,9 +1,9 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[imap, map, set_names, map_vec],
+  purrr[imap, map, set_names, map_vec, map2],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect],
-  dplyr[tbl, collect]
+  dplyr[tbl, collect, select, filter]
 )
 
 box::use(
@@ -14,73 +14,100 @@ box::use(
 e <- new.env()
 local(envir = e, {
   print.collection <- function(x, ...) {
-  desc_na <- function(x) {
-    ifelse(!is.na(x), x, 0)
-  }
-  col_steelblue4 <- combine_ansi_styles("steelblue4")
-  col_movie <- combine_ansi_styles("#47c5f1")
-  col_music <- combine_ansi_styles("#ed764d")
-  col_book <- combine_ansi_styles("#65c272")
-  col_game <- combine_ansi_styles("#f9af3f")
-  
-  if(length(x$source) == 1) {
-    x_desc <- map(x$data, \(i) {
-      split(i, i$status) |> 
-        map_vec(\(d) nrow(d))
-    })
-  } else {
-    x_desc <- purrr::map(x$data, \(i) {
-      purrr::map(i, \(j) split(j, j$status) |> map_vec(\(d) nrow(d)))
-    })
-  }
-  if(length(x$source) == 1) {
-    cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(x$source))), 
-        col_movie("Movie"), "\t\t    |",
-        col_music("Music"), "\t   |", 
-        col_book("Books"), "     |", 
-        col_game("Games"), "\n",
-        paste0("看过", col_movie(x_desc$movie["看过"]), "部电影电视剧"), " |", 
-        paste0("听过", col_music(x_desc$music["听过"]), "张专辑"), "|",
-        paste0("读过", col_book(x_desc$book["读过"]), "本书"),  " |",
-        paste0("玩过", col_game(x_desc$game["玩过"]), "款游戏"), "\n",
-        paste0("在看", col_movie(desc_na(x_desc$movie["在看"])), "部电影电视剧"), "   |", 
-        paste0("在听", col_music(desc_na(x_desc$music["在听"])), "张专辑"), "  |",
-        paste0("在读", col_book(desc_na(x_desc$book["在读"])), "本书"),  "  |",
-        paste0("在玩", col_game(desc_na(x_desc$game["在玩"])), "款游戏"), "\n",
-        paste0("想看", col_movie(desc_na(x_desc$movie["想看"])), "部电影电视剧"), "  |", 
-        paste0("想听", col_music(desc_na(x_desc$music["想听"])), "张专辑"), "  |",
-        paste0("想读", col_book(desc_na(x_desc$book["想读"])), "本书"),  "  |",
-        paste0("想玩", col_game(desc_na(x_desc$game["想玩"])), "款游戏"), "\n"
-    )
-  } else {
-    purrr::walk2(x_desc, x$source, \(u, v) {
-      cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(v))), 
+    desc_na <- function(x) {
+      ifelse(!is.na(x), x, 0)
+    }
+    col_steelblue4 <- combine_ansi_styles("steelblue4")
+    col_movie <- combine_ansi_styles("#47c5f1")
+    col_music <- combine_ansi_styles("#ed764d")
+    col_book <- combine_ansi_styles("#65c272")
+    col_game <- combine_ansi_styles("#f9af3f")
+    
+    if(length(x$source) == 1) {
+      x_desc <- map(x$data, \(i) {
+        split(i, i$status) |> 
+          map_vec(\(d) nrow(d))
+      })
+    } else {
+      x_desc <- purrr::map(x$data, \(i) {
+        purrr::map(i, \(j) split(j, j$status) |> map_vec(\(d) nrow(d)))
+      })
+    }
+    if(length(x$source) == 1) {
+      cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(x$source))), 
           col_movie("Movie"), "\t\t    |",
           col_music("Music"), "\t   |", 
           col_book("Books"), "     |", 
           col_game("Games"), "\n",
-          paste0("看过", col_movie(u$movie["看过"]), "部电影电视剧"), " |", 
-          paste0("听过", col_music(u$music["听过"]), "张专辑"), "|",
-          paste0("读过", col_book(u$book["读过"]), "本书"),  " |",
-          paste0("玩过", col_game(u$game["玩过"]), "款游戏"), "\n",
-          paste0("在看", col_movie(desc_na(u$movie["在看"])), "部电影电视剧"), "   |", 
-          paste0("在听", col_music(desc_na(u$music["在听"])), "张专辑"), "  |",
-          paste0("在读", col_book(desc_na(u$book["在读"])), "本书"),  "  |",
-          paste0("在玩", col_game(desc_na(u$game["在玩"])), "款游戏"), "\n",
-          paste0("想看", col_movie(desc_na(u$movie["想看"])), "部电影电视剧"), "  |", 
-          paste0("想听", col_music(desc_na(u$music["想听"])), "张专辑"), "  |",
-          paste0("想读", col_book(desc_na(u$book["想读"])), "本书"),  "  |",
-          paste0("想玩", col_game(desc_na(u$game["想玩"])), "款游戏"), "\n"
+          paste0("看过", col_movie(x_desc$movie["看过"]), "部电影电视剧"), " |", 
+          paste0("听过", col_music(x_desc$music["听过"]), "张专辑"), "|",
+          paste0("读过", col_book(x_desc$book["读过"]), "本书"),  " |",
+          paste0("玩过", col_game(x_desc$game["玩过"]), "款游戏"), "\n",
+          paste0("在看", col_movie(desc_na(x_desc$movie["在看"])), "部电影电视剧"), "   |", 
+          paste0("在听", col_music(desc_na(x_desc$music["在听"])), "张专辑"), "  |",
+          paste0("在读", col_book(desc_na(x_desc$book["在读"])), "本书"),  "  |",
+          paste0("在玩", col_game(desc_na(x_desc$game["在玩"])), "款游戏"), "\n",
+          paste0("想看", col_movie(desc_na(x_desc$movie["想看"])), "部电影电视剧"), "  |", 
+          paste0("想听", col_music(desc_na(x_desc$music["想听"])), "张专辑"), "  |",
+          paste0("想读", col_book(desc_na(x_desc$book["想读"])), "本书"),  "  |",
+          paste0("想玩", col_game(desc_na(x_desc$game["想玩"])), "款游戏"), "\n"
       )
-    })
+    } else {
+      purrr::walk2(x_desc, x$source, \(u, v) {
+        cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(v))), 
+            col_movie("Movie"), "\t\t    |",
+            col_music("Music"), "\t   |", 
+            col_book("Books"), "     |", 
+            col_game("Games"), "\n",
+            paste0("看过", col_movie(u$movie["看过"]), "部电影电视剧"), " |", 
+            paste0("听过", col_music(u$music["听过"]), "张专辑"), "|",
+            paste0("读过", col_book(u$book["读过"]), "本书"),  " |",
+            paste0("玩过", col_game(u$game["玩过"]), "款游戏"), "\n",
+            paste0("在看", col_movie(desc_na(u$movie["在看"])), "部电影电视剧"), "   |", 
+            paste0("在听", col_music(desc_na(u$music["在听"])), "张专辑"), "  |",
+            paste0("在读", col_book(desc_na(u$book["在读"])), "本书"),  "  |",
+            paste0("在玩", col_game(desc_na(u$game["在玩"])), "款游戏"), "\n",
+            paste0("想看", col_movie(desc_na(u$movie["想看"])), "部电影电视剧"), "  |", 
+            paste0("想听", col_music(desc_na(u$music["想听"])), "张专辑"), "  |",
+            paste0("想读", col_book(desc_na(u$book["想读"])), "本书"),  "  |",
+            paste0("想玩", col_game(desc_na(u$game["想玩"])), "款游戏"), "\n"
+        )
+      })
+    }
   }
-}
   .S3method("print", "collection")
 })
-
+local(envir = e, {
+  diff.collection <- function(x, y) {
+    stopifnot('sources in "x" is not unique' = length(x$source) == 1)
+    stopifnot('sources in "y" is not unique' = length(y$source) == 1)
+    stopifnot('source in "x" is not from "database"' = x$source == "database")
+    stopifnot('source in "y" is not from "import"' = y$source == "import")
+    
+    diff_sid <- function(x, y) {
+      sid <- unique(c(x$subject_id, y$subject_id))
+      compare_sid <- purrr::map_vec(seq_along(sid), \(i) {
+        u <- filter(x, subject_id == sid[i]) |> select(-id)
+        v <- filter(y, subject_id == sid[i]) |> select(-id)
+        if(nrow(u) != 0 & nrow(v) == 0) {
+          FALSE
+        } else {
+          setequal(u, v)
+        }
+      })
+      filter(y, subject_id %in% sid[which(!compare_sid)]) |>
+        select(-id)
+    }
+    out <- map2(x$data, y$data, \(x, y) {
+      diff_sid(x, y)
+    })
+    structure(out, class = "collection_diff")
+  }
+  .S3method("diff", "collection")
+})
 #' @export
 collection <- function(source = c("database", "import"), 
-                              file = NULL, dbdir = NULL) {
+                       file = NULL, dbdir = NULL) {
   on.exit(dbDisconnect(con))
   if(!all(source %in% c("import", "database"))) {
     stop('One or more elements in argument "source" is invalid')
