@@ -1,5 +1,5 @@
 box::use(
-  purrr[map, map2, map_chr, imap, 
+  purrr[map, map2, map_chr, imap, map_vec, pmap,
         set_names, reduce, list_rbind], 
   readxl[excel_sheets], 
   stringr[str_which, str_match, str_count,
@@ -9,7 +9,9 @@ box::use(
   dplyr[mutate, as_tibble, filter, arrange, row_number,
         rename, case_when, select, relocate, group_by, ungroup],
   tidyr[drop_na, unnest_wider], 
-  lubridate[ymd_hms]
+  lubridate[ymd_hms],
+  stats[na.omit], 
+  utils[head, tail]
 )
 
 #' Import collection data
@@ -19,7 +21,7 @@ box::use(
 #' @export
 #' @return A tibble
 read_import <- function(file) {
-  stopifnot("INVALID FILE TYPE" = tools::file_ext(file) == "xlsx")
+  stopifnot("INVALID FILE TYPE: expects xlsx file" = tools::file_ext(file) == "xlsx")
   sheet_regex <- c("^看.$|^.看$", "听", "读", "玩")
   meta_regex <- c("^https\\:\\/\\/([a-z]+)\\.douban\\.com\\/subject\\/(\\d+).$", 
                   "^https\\:\\/\\/www\\.douban\\.com\\/([a-z]+)\\/(\\d+).$")
@@ -105,8 +107,10 @@ clean_import <- function(data, which = NULL) {
                                               collapse = ""), "(.+)", collapse = "")),
         e = map2(intro, r, \(s, r) str_match(s, r)[, -1]), 
         e = map(e, `length<-`, max(lengths(e))), 
+        true_length = map_vec(e, \(x) length(na.omit(x))),
+        e = pmap(list(x = e, y = true_length, z = type), intro_inspect), 
         e = map(e, set_names, nm)
-      ) |>
+      ) |> 
       unnest_wider(e)
     
     data <- switch(
@@ -148,4 +152,26 @@ clean_import <- function(data, which = NULL) {
   }
   
   stop('invalid "which" argument: one of c("movie", "book", "music", "game")', call. = FALSE)
+}
+
+intro_inspect <- function(x, y, z) {
+  stopifnot("z should be a single character" = is.character(z) && length(z) == 1)
+  stopifnot("y should be a single integer" = is.integer(y) && length(y) == 1)
+  if(z == "book") {
+    if(y > 3) {
+      tail(x, 3)
+    } else head(x, 3)
+  } else if(z %in% c("movie", "music")) {
+    x
+  }
+}
+
+#' @export
+from_import <- function(file) {
+  collections <- c(book = "book", game = "game", 
+                   movie = "movie", music = "music")
+  imports <- read_import(file = file)
+  
+  collections <- imap(collections, ~clean_import(imports, .x))
+  structure(collections, class = "collection")
 }
