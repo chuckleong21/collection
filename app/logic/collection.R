@@ -10,7 +10,10 @@ box::use(
   app/logic/read_import[...]
 )
 
-print.collection <- function(x, ...) {
+# explicit register S3 method for box module
+e <- new.env()
+local(envir = e, {
+  print.collection <- function(x, ...) {
   desc_na <- function(x) {
     ifelse(!is.na(x), x, 0)
   }
@@ -72,6 +75,8 @@ print.collection <- function(x, ...) {
     })
   }
 }
+  .S3method("print", "collection")
+})
 
 #' @export
 collection <- function(source = c("database", "import"), 
