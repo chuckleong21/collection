@@ -1,9 +1,10 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[imap, map, set_names, map_vec, map2],
+  purrr[imap, map, set_names, map_vec, map2, list_rbind],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect],
-  dplyr[tbl, collect, select, filter]
+  dplyr[tbl, collect, select, filter, case_when, mutate, setequal],
+  waldo[compare]
 )
 
 box::use(
@@ -85,29 +86,37 @@ local(envir = e, {
     stopifnot('source in "y" is not from "import"' = y$source == "import")
     
     diff_sid <- function(x, y) {
+      args <- get("args", environment())
       sid <- unique(c(x$subject_id, y$subject_id))
-      compare_sid <- purrr::map_vec(seq_along(sid), \(i) {
+      compare_sid <- map_vec(seq_along(sid), \(i) {
         u <- filter(x, subject_id == sid[i]) |> select(-id)
         v <- filter(y, subject_id == sid[i]) |> select(-id)
-        if(nrow(u) != 0 & nrow(v) == 0) {
-          FALSE
-        } else {
-          setequal(u, v)
-        }
+        case_when(nrow(u) != 0 & nrow(v) == 0 ~ "behind", 
+                  nrow(u) != 0 & nrow(v) != 0 & !setequal(u, v) ~ "behind",
+                  nrow(u) == 0 & nrow(v) != 0 ~ "ahead", 
+                  .default = "identical") 
       })
-      filter(y, subject_id %in% sid[which(!compare_sid)]) |>
+      branch <- map(c("behind", "ahead"), \(k) {
+        filter(y, subject_id %in% sid[which(compare_sid == k)]) |> 
+          mutate(diff = k) |>
+          select(-id)
+      }) |> list_rbind()
+      main <- filter(x, subject_id %in% branch$subject_id) |> 
         select(-id)
+      list(main = main, branch = branch)
     }
     out <- map2(x$data, y$data, \(x, y) {
       diff_sid(x, y)
     })
-    structure(out, class = "collection_diff")
+    out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
+    out <- structure(out, class = "collection_diff")
+    print(out)
   }
   .S3method("diff", "collection")
 })
-#' @export
-collection <- function(source = c("database", "import"), 
-                       file = NULL, dbdir = NULL) {
+
+collection_get <- function(source = c("database", "import"), 
+                               file = NULL, dbdir = NULL) {
   on.exit(dbDisconnect(con))
   if(!all(source %in% c("import", "database"))) {
     stop('One or more elements in argument "source" is invalid')
@@ -150,4 +159,27 @@ collection <- function(source = c("database", "import"),
     return(structure(list(source = source, data = database), class = "collection"))
   } else stop('invalid "source" argument: either "database" or "import"')
 }
+#' @export
+collection <- function(source = c("database", "import"), 
+                       file = NULL, dbdir = NULL) {
+  collection_get(source = source, file = file, dbdir = dbdir)
+}
 
+#' @export
+branch <- function(diff) {
+  UseMethod("branch")
+}
+local(envir = e, {
+  branch.collection_diff <- function(x) {
+    map(x, ~.x$branch)
+  }
+  .S3method("branch", "collection_diff")
+})
+local(envir = e, {
+  print.collection_diff <- function(x) {
+    map(x, \(diff) {
+      compare(diff$main, diff$branch)
+    })
+  }
+  .S3method("print", "collection_diff")
+})
