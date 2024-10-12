@@ -12,6 +12,9 @@ box::use(
 )
 
 # explicit register S3 method for box module
+
+# collection method -------------------------------------------------------
+
 e <- new.env()
 local(envir = e, {
   print.collection <- function(x, ...) {
@@ -78,45 +81,52 @@ local(envir = e, {
   }
   .S3method("print", "collection")
 })
-local(envir = e, {
-  diff.collection <- function(x, y) {
-    stopifnot('sources in "x" is not unique' = length(x$source) == 1)
-    stopifnot('sources in "y" is not unique' = length(y$source) == 1)
-    stopifnot('source in "x" is not from "database"' = x$source == "database")
-    stopifnot('source in "y" is not from "import"' = y$source == "import")
-    
-    diff_sid <- function(x, y) {
-      args <- get("args", environment())
-      sid <- unique(c(x$subject_id, y$subject_id))
-      compare_sid <- map_vec(seq_along(sid), \(i) {
-        u <- filter(x, subject_id == sid[i]) |> select(-id)
-        v <- filter(y, subject_id == sid[i]) |> select(-id)
-        case_when(nrow(u) != 0 & nrow(v) == 0 ~ "behind", 
-                  nrow(u) != 0 & nrow(v) != 0 & !setequal(u, v) ~ "behind",
-                  nrow(u) == 0 & nrow(v) != 0 ~ "ahead", 
-                  .default = "identical") 
-      })
-      branch <- map(c("behind", "ahead"), \(k) {
-        filter(y, subject_id %in% sid[which(compare_sid == k)]) |> 
-          mutate(diff = k) |>
-          select(-id)
-      }) |> list_rbind()
-      main <- filter(x, subject_id %in% branch$subject_id) |> 
-        select(-id)
-      list(main = main, branch = branch)
-    }
-    out <- map2(x$data, y$data, \(x, y) {
-      diff_sid(x, y)
+#' Compare Collections
+#'
+#' @param x Collection get from database.
+#' @param y Collection get from an external file
+#' @param compare Whether to compare x and y
+#'
+#' @return A \code{collection_diff} object
+diff.collection <- function(x, y, compare = FALSE) {
+  stopifnot('sources in "x" is not unique' = length(x$source) == 1)
+  stopifnot('sources in "y" is not unique' = length(y$source) == 1)
+  stopifnot('source in "x" is not from "database"' = x$source == "database")
+  stopifnot('source in "y" is not from "import"' = y$source == "import")
+  
+  diff_sid <- function(x, y) {
+    args <- get("args", environment())
+    sid <- unique(c(x$subject_id, y$subject_id))
+    compare_sid <- map_vec(seq_along(sid), \(i) {
+      u <- filter(x, subject_id == sid[i]) |> select(-id)
+      v <- filter(y, subject_id == sid[i]) |> select(-id)
+      case_when(nrow(u) != 0 & nrow(v) == 0 ~ "behind", 
+                nrow(u) != 0 & nrow(v) != 0 & !setequal(u, v) ~ "behind",
+                nrow(u) == 0 & nrow(v) != 0 ~ "ahead", 
+                .default = "identical") 
     })
-    out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
-    out <- structure(out, class = "collection_diff")
-    print(out)
+    branch <- map(c("behind", "ahead"), \(k) {
+      filter(y, subject_id %in% sid[which(compare_sid == k)]) |> 
+        mutate(diff = k) |>
+        select(-id)
+    }) |> list_rbind()
+    main <- filter(x, subject_id %in% branch$subject_id) |> 
+      select(-id)
+    list(main = main, branch = branch)
   }
+  out <- map2(x$data, y$data, \(x, y) {
+    diff_sid(x, y)
+  })
+  out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
+  structure(list(compare = compare, diff = out), class = "collection_diff")
+}
+local(envir = e, {
+  diff.collection
   .S3method("diff", "collection")
 })
 
 collection_get <- function(source = c("database", "import"), 
-                               file = NULL, dbdir = NULL) {
+                           file = NULL, dbdir = NULL) {
   on.exit(dbDisconnect(con))
   if(!all(source %in% c("import", "database"))) {
     stop('One or more elements in argument "source" is invalid')
@@ -159,11 +169,36 @@ collection_get <- function(source = c("database", "import"),
     return(structure(list(source = source, data = database), class = "collection"))
   } else stop('invalid "source" argument: either "database" or "import"')
 }
+#' @title Get collection
+#' @description
+#' A \code{collection} object is created by either the data 
+#' stored in a database, or an external file exported through
+#' web extension called \emph{豆伴}. For a collection created
+#' by database, it uses a default local file: \code{app/logic/database.duckdb}.
+#' Pay attention when you have to alter the file location.
+#' 
+#' @param source where the collection should be obtained from, 
+#' either \code{"source"}, \code{"import"}, 
+#' or \code{c("source", "import")}.
+#'
+#' @param file A xlsx file path that should not be be \code{NULL} when
+#' \code{source} contains import.
+#' @param dbdir A duckdb file path with a local path in \code{app/logic}.
+#' See description.
+#'
+#' @return A \code{collection} object
 #' @export
+#' 
+#' @examples
+#' collection("database")
+#' 
 collection <- function(source = c("database", "import"), 
                        file = NULL, dbdir = NULL) {
   collection_get(source = source, file = file, dbdir = dbdir)
 }
+
+
+# collection_diff method --------------------------------------------------
 
 #' @export
 branch <- function(diff) {
@@ -171,15 +206,19 @@ branch <- function(diff) {
 }
 local(envir = e, {
   branch.collection_diff <- function(x) {
-    map(x, ~.x$branch)
+    map(x$diff, ~.x$branch)
   }
   .S3method("branch", "collection_diff")
 })
 local(envir = e, {
   print.collection_diff <- function(x) {
-    map(x, \(diff) {
-      compare(diff$main, diff$branch)
-    })
+    if(x$compare) {
+      print(map(x$diff, \(diff) {
+        compare(diff$main, diff$branch)
+      }))
+    } else {
+      print(x$diff)
+    }
   }
   .S3method("print", "collection_diff")
 })
