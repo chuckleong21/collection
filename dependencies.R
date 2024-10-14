@@ -1,2 +1,12 @@
 # This file allows packrat (used by rsconnect during deployment) to pick up dependencies.
+library(countrycode)
+library(dplyr)
+library(duckdb)
+library(lubridate)
+library(openxlsx2)
+library(readxl)
 library(rhino)
+library(stringr)
+library(tidyr)
+library(usethis)
+library(waldo)
