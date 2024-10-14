@@ -1,6 +1,6 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[imap, map, set_names, map_vec, map2, list_rbind],
+  purrr[imap, map, set_names, map_vec, map2, walk2, list_rbind],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect],
   dplyr[tbl, collect, select, filter, case_when, mutate, setequal],
@@ -33,7 +33,7 @@ local(envir = e, {
           map_vec(\(d) nrow(d))
       })
     } else {
-      x_desc <- purrr::map(x$data, \(i) {
+      x_desc <- map(x$data, \(i) {
         purrr::map(i, \(j) split(j, j$status) |> map_vec(\(d) nrow(d)))
       })
     }
@@ -57,7 +57,7 @@ local(envir = e, {
           paste0("想玩", col_game(desc_na(x_desc$game["想玩"])), "款游戏"), "\n"
       )
     } else {
-      purrr::walk2(x_desc, x$source, \(u, v) {
+      walk2(x_desc, x$source, \(u, v) {
         cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(v))), 
             col_movie("Movie"), "\t\t    |",
             col_music("Music"), "\t   |", 
@@ -88,6 +88,7 @@ local(envir = e, {
 #' @param compare Whether to compare x and y
 #'
 #' @return A \code{collection_diff} object
+#' @export
 diff.collection <- function(x, y, compare = FALSE) {
   stopifnot('sources in "x" is not unique' = length(x$source) == 1)
   stopifnot('sources in "y" is not unique' = length(y$source) == 1)
