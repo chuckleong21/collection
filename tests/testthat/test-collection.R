@@ -23,9 +23,9 @@ test_that("Collection class", {
 })
 
 test_that("diff method", {
-  db <- collection("database") 
-  im <- collection("import", "app/static/豆伴(58485907).xlsx")
-  im2 <- collection("import", "app/static/豆伴(58485907)_2.xlsx")
+  db <- collection("database", dbdir = dbdir) 
+  im <- collection("import", f, dbdir = dbdir)
+  im2 <- collection("import", f2, dbdir = dbdir)
   d <- diff(db, im)
   expect_s3_class(d, "collection_diff")
   expect_true(all(purrr::map_vec(d$diff, ~any((names(.x) %in% "branch")))))
