@@ -89,7 +89,7 @@ local(envir = e, {
 #'
 #' @return A \code{collection_diff} object
 #' @export
-diff.collection <- function(x, y, compare = FALSE) {
+diff.collection <- function(x, y, compare = TRUE) {
   stopifnot('sources in "x" is not unique' = length(x$source) == 1)
   stopifnot('sources in "y" is not unique' = length(y$source) == 1)
   stopifnot('source in "x" is not from "database"' = x$source == "database")
@@ -118,7 +118,7 @@ diff.collection <- function(x, y, compare = FALSE) {
   out <- map2(x$data, y$data, \(x, y) {
     diff_sid(x, y)
   })
-  out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
+  # out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
   structure(list(compare = compare, diff = out), class = "collection_diff")
 }
 local(envir = e, {
@@ -214,6 +214,12 @@ local(envir = e, {
 local(envir = e, {
   print.collection_diff <- function(x) {
     if(x$compare) {
+      is_identical <- all(map(x$diff, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)
+      if(is_identical) {
+        branch_no_diff <- map(x$diff, \(xx) xx$branch[, -charmatch("diff", names(xx$branch))])
+        x$diff <- map(x$diff, \(x) x$main) |>
+          map2(branch_no_diff, \(x, y) list(main = x, branch = y))
+      }
       print(map(x$diff, \(diff) {
         compare(diff$main, diff$branch)
       }))
