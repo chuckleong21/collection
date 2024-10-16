@@ -4,12 +4,17 @@ box::use(
   blogdown[read_toml, write_toml],
   cli[combine_ansi_styles],
   stringr[str_detect, str_extract],
-  glue[glue]
+  glue[glue], 
+  assertthat[assert_that]
 )
 
 # box::use(
 #   app/logic/collection[...]
 # )
+
+
+# api class --------------------------------------------------------------
+
 
 #' @export
 api <- function(x, ...) {
@@ -58,39 +63,50 @@ api.numeric <- function(id, domain, schema = NULL) {
   }
 }
 
+
+# request method ----------------------------------------------------------
+
+
 #' @export
 request <- function(x, ...)  {
   UseMethod("request")
-  NextMethod()
 }
 request.character <- function(x) {
   httr2::request(x)
 }
 request.api <- function(api, headers = NULL) {
-  headers <- headers %||% read_toml("app/static/headers.toml")$headers
-  if(api$domain == "douban") {
-    if(api$schema == "game") {
-      url_constructor <- 'https://www.douban.com/{api[["schema"]]}/{api[["id"]]}'
-    } else {
-      url_constructor <- 'https://{api[["schema"]]}.{api[["domain"]]}.com/subject/{api[["id"]]}'
-    }
-  } else if(api$domain == "bangumi") {
-    url_constructor <- 'https://{api[["domain"]]}.tv/subject/{api[["id"]]}'
+  if(inherits(api, "douban")) {
+    request.douban(douban_api = api, headers = headers)
+  } else if(inherits(api, "bangumi")) {
+    request.bangumi(bangumi_api = api)
   }
-  
-  if(api$domain == "douban") {
+}
+
+# request method for API children classes
+request.douban <- function(douban_api, headers = NULL) {
+  headers <- headers %||% read_toml("app/static/headers.toml")$headers
+  if(douban_api$schema == "game") {
+    url_constructor <- 'https://www.douban.com/{douban_api[["schema"]]}/{douban_api[["id"]]}'
+  } else {
+    url_constructor <- 'https://{douban_api[["schema"]]}.{douban_api[["domain"]]}.com/subject/{douban_api[["id"]]}'
+  }
     glue(url_constructor) |>
       request() |>
       req_headers(!!!headers) |>
       req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
       req_perform()
-  } else if(api$domain == "bangumi") {
-    glue(url_constructor) |> 
-      request() |>
-      req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
-      req_perform()
-  }
 }
+
+request.bangumi <- function(bangumi_api) {
+  url_constructor <- 'https://{bangumi_api[["domain"]]}.tv/subject/{bangumi_api[["id"]]}'
+  glue(url_constructor) |> 
+    request() |>
+    req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
+    req_perform()
+}
+
+# fetch method ------------------------------------------------------------
+
 
 #' @export
 fetch <- function(api) {
@@ -103,6 +119,11 @@ fetch.api <- function(api) {
     fetch.bangumi(api)
   }
 }
+
+
+# Register S3 Method ------------------------------------------------------
+
+
 e <- new.env()
 local(envir = e, {
   api.character
