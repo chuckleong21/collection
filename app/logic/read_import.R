@@ -173,5 +173,9 @@ from_import <- function(file) {
   imports <- read_import(file = file)
   
   collections <- imap(collections, ~clean_import(imports, .x))
-  structure(collections, class = "collection")
+  collections$book$status <- factor(collections$book$status, levels = c("想读", "在读","读过"), ordered = TRUE)
+  collections$movie$status <- factor(collections$movie$status, levels = c("想看", "在看","看过"), ordered = TRUE)
+  collections$music$status <- factor(collections$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
+  collections$game$status <- factor(collections$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
+  collections
 }
