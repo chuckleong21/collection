@@ -1,4 +1,5 @@
 # This file allows packrat (used by rsconnect during deployment) to pick up dependencies.
+library(assertthat)
 library(countrycode)
 library(dplyr)
 library(duckdb)
