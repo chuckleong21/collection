@@ -4,7 +4,8 @@ box::use(
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect],
   dplyr[tbl, collect, select, filter, case_when, mutate, setequal],
-  waldo[compare]
+  waldo[compare],
+  assertthat[assert_that]
 )
 
 box::use(
@@ -140,11 +141,14 @@ collection_get <- function(source = c("database", "import"),
   database <- map(collection_names, \(x) {
     tbl(con, x) |> collect()
   })
+  database$book$status <- factor(database$book$status, levels = c("想读", "在读","读过"), ordered = TRUE)
+  database$movie$status <- factor(database$movie$status, levels = c("想看", "在看","看过"), ordered = TRUE)
+  database$music$status <- factor(database$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
+  database$game$status <- factor(database$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
   
   if("import" %in% source) {
     if(!is.null(file)) {
-      imports <- read_import(file = file)
-      import <- imap(collection_names, ~clean_import(imports, .x))
+      import <- from_import(file)
       if(length(source) == 1) {
         return(
           structure(list(source = source, data = import), class = "collection")
@@ -199,33 +203,53 @@ collection <- function(source = c("database", "import"),
 }
 
 
-# collection_diff method --------------------------------------------------
+# collection_diff class --------------------------------------------------
 
+# branch method
 #' @export
 branch <- function(diff) {
   UseMethod("branch")
 }
-local(envir = e, {
-  branch.collection_diff <- function(x) {
-    map(x$diff, ~.x$branch)
+branch.collection_diff <- function(x) {
+  map(x$diff, ~.x$branch)
+}
+print.collection_diff <- function(x) {
+  if(x$compare) {
+    is_identical <- all(map(x$diff, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)
+    if(is_identical) {
+      branch_no_diff <- map(x$diff, \(xx) xx$branch[, -charmatch("diff", names(xx$branch))])
+      x$diff <- map(x$diff, \(x) x$main) |>
+        map2(branch_no_diff, \(x, y) list(main = x, branch = y))
+    }
+    print(map(x$diff, \(diff) {
+      compare(diff$main, diff$branch)
+    }))
+  } else {
+    print(x$diff)
   }
+
+}
+
+# merge method
+#' @export
+merge <- function(x, y, ...) {
+  UseMethod("merge")
+}
+merge.collection <- function(x, y, diff) {
+  
+}
+merge.data.frame <- function(x, y, ...) {
+  merge.data.frame(x, y, ...)
+}
+merge.default <- function(x, y, ...) {
+  merge.default(x, y, ...)
+}
+
+local(envir = e, {
+  branch.collection_diff
   .S3method("branch", "collection_diff")
 })
 local(envir = e, {
-  print.collection_diff <- function(x) {
-    if(x$compare) {
-      is_identical <- all(map(x$diff, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)
-      if(is_identical) {
-        branch_no_diff <- map(x$diff, \(xx) xx$branch[, -charmatch("diff", names(xx$branch))])
-        x$diff <- map(x$diff, \(x) x$main) |>
-          map2(branch_no_diff, \(x, y) list(main = x, branch = y))
-      }
-      print(map(x$diff, \(diff) {
-        compare(diff$main, diff$branch)
-      }))
-    } else {
-      print(x$diff)
-    }
-  }
+  print.collection_diff
   .S3method("print", "collection_diff")
 })
