@@ -1,12 +1,13 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[imap, map, set_names, map_vec, map2, walk2, list_rbind],
+  purrr[imap, map, set_names, map_vec, map2, iwalk, walk2, list_rbind],
   duckdb[duckdb], 
-  DBI[dbConnect, dbDisconnect],
+  DBI[dbConnect, dbDisconnect, dbWriteTable],
   dplyr[tbl, collect, select, filter, case_when, mutate, setequal, 
         arrange, rows_upsert, row_number],
   waldo[compare],
-  assertthat[assert_that, `on_failure<-`]
+  assertthat[assert_that, `on_failure<-`],
+  openxlsx2[write_xlsx]
 )
 
 box::use(
@@ -223,6 +224,47 @@ collection_get <- function(source = c("database", "import"),
 collection <- function(source = c("database", "import"), 
                        file = NULL, dbdir = NULL) {
   collection_get(source = source, file = file, dbdir = dbdir)
+}
+
+write_collection_xlsx <- function(collection, file) {
+  assert_that(inherits(collection, "collection"), 
+              length(file) == 1,
+              tools::file_ext(file) %in% c("xls", "xlsx"))
+  iwalk(collection$data, \(x, idx) {
+    write_xlsx(x, file = file, sheet = idx)
+  })
+}
+write_collection_duckdb <- function(collection, dbdir = NULL) {
+  on.exit(dbDisconnect(con), add = TRUE)
+  assert_that(inherits(collection, "collection"))
+  dbdir <- dbdir %||% "app/logic/database.duckdb"
+  assert_that(
+    length(dbdir) == 1,
+    "duckdb" == tools::file_ext(dbdir)
+  )
+  con <- dbConnect(duckdb(dbdir = dbdir))
+  iwalk(collection$data, \(x, idx) {
+    dbWriteTable(con, idx, x, overwrite = TRUE)
+  })
+}
+
+#' @export
+write_collection <- function(collection, 
+                             to = c("worksheet", "database"), 
+                             ...) {
+  call <- as.list(match.call())
+  if(length(to) != 1) {
+    stop(paste0('argument "to" is either "worksheet" or "database",', 
+                " not ", deparse(call$to)))
+  }
+  if(to == "worksheet") {
+    write_collection_xlsx(collection = collection, ...)
+  }
+  if(to == "database") {
+    write_collection_duckdb(collection = collection, ...)
+  }
+  stop(paste0('argument "to" is either "worksheet" or "database",', 
+              " not ", deparse(call$to)))
 }
 
 
