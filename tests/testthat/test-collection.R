@@ -34,3 +34,18 @@ test_that("merge method", {
   expect_message(merge(d, db), "updated \\d+? records")
   expect_message(merge(d2, db), "updated \\d+? records")
 })
+
+test_that("write_collection", {
+  on.exit({
+    file.remove("collection.xlsx")
+  }, add = TRUE, after = FALSE)
+  m <- merge(d2, db)
+  expect_error(write_collection(d, c("worksheet"), file = "collection.xlsm"), 
+               "collection does not inherit from class collection")
+  expect_error(write_collection(m, c("worksheet", "database")), 
+              "argument \"to\" is either \"worksheet\" or \"database\"")
+  expect_error(write_collection(m, c("worksheet"), file = "collection.xlsm"), 
+               "not TRUE")
+  expect_silent(write_collection(m, "worksheet", file = "collection.xlsx"))
+  expect_silent(write_collection(m, "database", dbdir = "database.duckdb"))
+})
