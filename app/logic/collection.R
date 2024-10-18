@@ -256,6 +256,9 @@ write_collection <- function(collection,
   if(length(to) != 1) {
     stop(paste0('argument "to" is either "worksheet" or "database",', 
                 " not ", deparse(call$to)))
+  } else if(!to %in% c("worksheet", "database")) {
+    stop(paste0('argument "to" is either "worksheet" or "database",', 
+                " not ", deparse(call$to)))
   }
   if(to == "worksheet") {
     write_collection_xlsx(collection = collection, ...)
@@ -263,8 +266,6 @@ write_collection <- function(collection,
   if(to == "database") {
     write_collection_duckdb(collection = collection, ...)
   }
-  stop(paste0('argument "to" is either "worksheet" or "database",', 
-              " not ", deparse(call$to)))
 }
 
 
