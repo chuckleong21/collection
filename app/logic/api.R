@@ -6,12 +6,13 @@ box::use(
   stringr[str_detect, str_extract],
   glue[glue], 
   assertthat[assert_that],
-  utils[head]
+  utils[head],
+  httr2[resp_body_html]
 )
 
-# box::use(
-#   app/logic/collection[...]
-# )
+box::use(
+  app/logic/api_helpers[...]
+)
 
 
 # api class --------------------------------------------------------------
@@ -122,6 +123,13 @@ fetch.api <- function(api) {
     stop(paste0("No fetch method for ", head(class(api), 1), " API class"), 
          call. = FALSE)
   }
+}
+fetch.douban <- function(x, xpath = xpaths$douban) {
+  r <- request(x)
+  h <- httr2::resp_body_html(r)
+  res <- xpath$movie |> 
+    purrr::map(~fetch_douban_movie(h, .x)) |>
+    purrr::list_flatten(name_spec = "{inner}")
 }
 
 
