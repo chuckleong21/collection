@@ -118,13 +118,19 @@ clean_import <- function(data, which = NULL) {
       "movie" = data |> 
         select(id, subject_id, type, title, year, region, genre, director, 
                starring, status, rating, my_rating, 
-               url, created_at), 
+               url, created_at) |>
+        mutate(cover = NA) |> 
+        relocate(cover, .after = title), 
       "music" = data |> 
         select(id, subject_id, type, title, year, performer, status, rating,
-               my_rating, url, created_at), 
+               my_rating, url, created_at) |>
+        mutate(cover = NA) |> 
+        relocate(cover, .after = title), 
       "book" = data |> 
         select(id, subject_id, type, title, year, author, publisher, 
-               status, rating, my_rating, url, created_at)
+               status, rating, my_rating, url, created_at) |>
+        mutate(cover = NA) |> 
+        relocate(cover, .after = title)
     )
     return(data)
   }
@@ -147,7 +153,9 @@ clean_import <- function(data, which = NULL) {
         developer = str_extract(intro, "[^/]+$")
       ) |> 
       select(id, subject_id, type, title, status, category, developer, 
-             release, rating, my_rating, url, created_at)
+             release, rating, my_rating, url, created_at) |>
+      mutate(cover = NA) |> 
+      relocate(cover, .after = title)
     return(data)
   }
   
