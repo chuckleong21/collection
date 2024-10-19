@@ -119,17 +119,17 @@ clean_import <- function(data, which = NULL) {
         select(id, subject_id, type, title, year, region, genre, director, 
                starring, status, rating, my_rating, 
                url, created_at) |>
-        mutate(cover = NA) |> 
+        mutate(cover = NA_character_) |> 
         relocate(cover, .after = title), 
       "music" = data |> 
         select(id, subject_id, type, title, year, performer, status, rating,
                my_rating, url, created_at) |>
-        mutate(cover = NA) |> 
+        mutate(cover = NA_character_) |> 
         relocate(cover, .after = title), 
       "book" = data |> 
         select(id, subject_id, type, title, year, author, publisher, 
                status, rating, my_rating, url, created_at) |>
-        mutate(cover = NA) |> 
+        mutate(cover = NA_character_) |> 
         relocate(cover, .after = title)
     )
     return(data)
@@ -154,7 +154,7 @@ clean_import <- function(data, which = NULL) {
       ) |> 
       select(id, subject_id, type, title, status, category, developer, 
              release, rating, my_rating, url, created_at) |>
-      mutate(cover = NA) |> 
+      mutate(cover = NA_character_) |> 
       relocate(cover, .after = title)
     return(data)
   }
