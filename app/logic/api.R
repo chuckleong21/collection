@@ -5,7 +5,8 @@ box::use(
   cli[combine_ansi_styles],
   stringr[str_detect, str_extract],
   glue[glue], 
-  assertthat[assert_that]
+  assertthat[assert_that],
+  utils[head]
 )
 
 # box::use(
@@ -109,7 +110,7 @@ request.bangumi <- function(bangumi_api) {
 
 
 #' @export
-fetch <- function(api) {
+fetch <- function(x, ...) {
   UseMethod("fetch")
 }
 fetch.api <- function(api) {
@@ -117,6 +118,9 @@ fetch.api <- function(api) {
     fetch.douban(api)
   } else if(inherits(api, "bangumi")) {
     fetch.bangumi(api)
+  } else {
+    stop(paste0("No fetch method for ", head(class(api), 1), " API class"), 
+         call. = FALSE)
   }
 }
 
