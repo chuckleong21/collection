@@ -94,11 +94,11 @@ request.douban <- function(douban_api, headers = NULL) {
   } else {
     url_constructor <- 'https://{douban_api[["schema"]]}.{douban_api[["domain"]]}.com/subject/{douban_api[["id"]]}'
   }
-    glue(url_constructor) |>
-      request() |>
-      req_headers(!!!headers) |>
-      req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
-      req_perform()
+  glue(url_constructor) |>
+    request() |>
+    req_headers(!!!headers) |>
+    req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
+    req_perform()
 }
 
 request.bangumi <- function(bangumi_api) {
@@ -143,7 +143,7 @@ fetch.douban <- function(x) {
     res$url <- r$url
     res$created_at <- force_tz(now(), "UTC")
     return(as_tibble(res) |>
-      select(id, subject_id, type, title, cover, year, region,
+             select(id, subject_id, type, title, cover, year, region,
                     genre, director, starring, status, rating, my_rating,
                     url, created_at))
   }
@@ -158,9 +158,24 @@ fetch.douban <- function(x) {
     res$my_rating <- NA_real_
     res$url <- r$url
     res$created_at <- force_tz(now(), "UTC")
-    as_tibble(res) |>
-      select(id, subject_id, type, title, cover, year, author,
-                    publisher, status, rating, my_rating,url, created_at)
+    return(as_tibble(res) |>
+             select(id, subject_id, type, title, cover, year, author,
+                    publisher, status, rating, my_rating, url, created_at))
+  }
+  if(identical(x$schema, "music")) {
+    res <- xpath$music |> 
+      map(~fetch_douban_music(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+    res$id <- NA_integer_
+    res$subject_id <- as.character(x$id)
+    res$type <- x$schema
+    res$status <- NA_character_
+    res$my_rating <- NA_real_
+    res$url <- r$url
+    res$created_at <- force_tz(now(), "UTC")
+    return(as_tibble(res) |>
+             select(id, subject_id, type, title, cover, year, performer,
+                    status, rating, my_rating, url, created_at))
   }
 }
 

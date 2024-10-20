@@ -10,14 +10,20 @@ box::use(
 xpaths <- list(
   douban = list(
     movie = c(
-      cover = '//*[@id="mainpic"]/a/img', 
-      title = '//*[@id="content"]/h1/span[1]', 
-      year = '//*[@id="content"]/h1/span[2]',
-      info = '//*[@id="info"]', 
+      cover  = '//*[@id="mainpic"]/a/img', 
+      title  = '//*[@id="content"]/h1/span[1]', 
+      year   = '//*[@id="content"]/h1/span[2]',
+      info   = '//*[@id="info"]', 
       rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
     ),
     book = c(
-      cover = '//*[@id="mainpic"]/a/img', 
+      cover  = '//*[@id="mainpic"]/a/img', 
+      title  = '//*[@id="wrapper"]/h1/span', 
+      info   = '//*[@id="info"]', 
+      rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
+    ),
+    music = c(
+      cover = '//*[@id="mainpic"]/span/a/img', 
       title = '//*[@id="wrapper"]/h1/span', 
       info = '//*[@id="info"]', 
       rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
@@ -88,4 +94,28 @@ fetch_douban_book <- function(x, xpath) {
   html_element(x, xpath = xpath) |>
     html_text2()
 }
-           
+
+#' @export
+fetch_douban_music <- function(x, xpath) {
+  if(stringr::str_detect(xpath, "img")) {
+    return(rvest::html_element(x, xpath = xpath) |> 
+             rvest::html_attr("src"))
+  }
+  if(stringr::str_detect(xpath, "info")) {
+    info <- html_element(x, xpath = xpath) |> 
+      html_text2() |>
+      str_split("\\n", simplify = TRUE) |>
+      as.vector()
+    performer <- info[stringr::str_which(info, "^表演者:\\s(.+)")] |>
+      stringr::str_remove_all("/ ") |>
+      stringr::str_replace(".*(?:表演者: )", "")
+    year <- info[stringr::str_which(info, "^发行时间:\\s(.+)")] |>
+      stringr::str_replace(".*(?:发行时间:\\s)", "") |>
+      lubridate::as_date() |> 
+      lubridate::year() |>
+      as.character()
+    return(list(performer = performer, year = year))
+  }
+  rvest::html_element(x, xpath = xpath) |> 
+    rvest::html_text2()
+}
