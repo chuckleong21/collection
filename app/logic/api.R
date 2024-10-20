@@ -1,5 +1,5 @@
 box::use(
-  httr2[req_perform, request, req_headers, req_error], 
+  httr2[req_perform, request, req_headers, req_error, resp_body_html], 
   rvest[html_element, html_elements, html_attr, html_text2], 
   blogdown[read_toml, write_toml],
   cli[combine_ansi_styles],
@@ -7,7 +7,9 @@ box::use(
   glue[glue], 
   assertthat[assert_that],
   utils[head],
-  httr2[resp_body_html]
+  purrr[map, list_flatten],
+  lubridate[force_tz, now],
+  dplyr[as_tibble, select]
 )
 
 box::use(
@@ -24,23 +26,23 @@ api <- function(x, ...) {
 }
 api.character <- function(url) {
   detect_regex <- "https://(bangumi\\.tv|(movie|book|music)\\.douban\\.com|www\\.douban\\.com/game)(/subject)?/(\\d+)/?"
-  if(!stringr::str_detect(url, detect_regex)) {
+  if(!str_detect(url, detect_regex)) {
     stop('Invalid "url" argument: not a URL or a corrupted URL', call. = FALSE)
   }
-  if(stringr::str_detect(url, "douban")) {
+  if(str_detect(url, "douban")) {
     domain <- "douban"
-    if(stringr::str_detect(url, "(movie|music|book)")) {
-      schema <- stringr::str_extract(url, detect_regex, group = 2)
-      id <- stringr::str_extract(url, detect_regex, group = 4)
+    if(str_detect(url, "(movie|music|book)")) {
+      schema <- str_extract(url, detect_regex, group = 2)
+      id <- str_extract(url, detect_regex, group = 4)
     } else {
       schema <- "game"
-      id <- stringr::str_extract(url, detect_regex, group = 4)
+      id <- str_extract(url, detect_regex, group = 4)
     }
     structure(list(domain = domain, schema = schema, id = id), 
               class = c("douban", "api"))
-  } else if(stringr::str_detect(url, "bangumi")) {
+  } else if(str_detect(url, "bangumi")) {
     domain <- "bangumi"
-    id <- stringr::str_extract(url, detect_regex, group = 4)
+    id <- str_extract(url, detect_regex, group = 4)
     structure(list(domain = domain, id = id), class = c("bangumi", "api"))
   }
 }
@@ -124,12 +126,42 @@ fetch.api <- function(api) {
          call. = FALSE)
   }
 }
-fetch.douban <- function(x, xpath = xpaths$douban) {
+fetch.douban <- function(x) {
   r <- request(x)
   h <- httr2::resp_body_html(r)
-  res <- xpath$movie |> 
-    purrr::map(~fetch_douban_movie(h, .x)) |>
-    purrr::list_flatten(name_spec = "{inner}")
+  xpath <- xpaths$douban
+  
+  if(identical(x$schema, "movie")) {
+    res <- xpath$movie |> 
+      map(~fetch_douban_movie(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+    res$id <- NA_integer_
+    res$subject_id <- as.character(x$id)
+    res$type <- x$schema
+    res$status <- NA_character_
+    res$my_rating <- NA_real_
+    res$url <- r$url
+    res$created_at <- force_tz(now(), "UTC")
+    return(as_tibble(res) |>
+      select(id, subject_id, type, title, cover, year, region,
+                    genre, director, starring, status, rating, my_rating,
+                    url, created_at))
+  }
+  if(identical(x$schema, "book")) {
+    res <- xpath$book |> 
+      map(~fetch_douban_book(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+    res$id <- NA_integer_
+    res$subject_id <- as.character(x$id)
+    res$type <- x$schema
+    res$status <- NA_character_
+    res$my_rating <- NA_real_
+    res$url <- r$url
+    res$created_at <- force_tz(now(), "UTC")
+    as_tibble(res) |>
+      select(id, subject_id, type, title, cover, year, author,
+                    publisher, status, rating, my_rating,url, created_at)
+  }
 }
 
 
@@ -152,4 +184,12 @@ local(envir = e, {
 local(envir = e, {
   request.api
   .S3method("request", "api")
+})
+local(envir = e, {
+  fetch.api
+  .S3method("fetch", "api")
+})
+local(envir = e, {
+  fetch.douban
+  .S3method("fetch", "douban")
 })

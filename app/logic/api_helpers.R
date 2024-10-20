@@ -1,5 +1,5 @@
 box::use(
-  stringr[str_detect, str_split, str_which, 
+  stringr[str_detect, str_split, str_which, str_replace,
           str_extract, str_remove_all, str_c],
   rvest[html_element, html_attr, html_text2], 
   purrr[reduce],
@@ -13,6 +13,12 @@ xpaths <- list(
       cover = '//*[@id="mainpic"]/a/img', 
       title = '//*[@id="content"]/h1/span[1]', 
       year = '//*[@id="content"]/h1/span[2]',
+      info = '//*[@id="info"]', 
+      rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
+    ),
+    book = c(
+      cover = '//*[@id="mainpic"]/a/img', 
+      title = '//*[@id="wrapper"]/h1/span', 
       info = '//*[@id="info"]', 
       rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
     )
@@ -58,5 +64,28 @@ fetch_douban_movie <- function(x, xpath) {
     html_text2()
 }
 
-
+#' @export
+fetch_douban_book <- function(x, xpath) {
+  if(str_detect(xpath, "img")) {
+    return(html_element(x, xpath = xpath) |> 
+             html_attr("src"))
+  }
+  if(str_detect(xpath, "info")) {
+    info <- html_element(x, xpath = xpath) |>
+      html_text2() |>
+      str_split("\\n", simplify = TRUE) |>
+      as.vector()
+    year <- info[str_which(info, "^出版年:\\s(.+)")] |>
+      str_extract("^出版年:\\s(\\d{4})", group = 1)
+    author <- info[str_which(info, "^作者:\\s(.+)")] |>
+      str_remove_all("/ ") |> 
+      str_replace(".*(?:作者:\\s)", "")
+    publisher <- info[str_which(info, "^出版社?:\\s(.+)")] |>
+      str_remove_all("/ ") |> 
+      str_replace(".*(?:出版社?:\\s)", "")
+    return(list(year = year, author = author, publisher = publisher))
+  }
+  html_element(x, xpath = xpath) |>
+    html_text2()
+}
            
