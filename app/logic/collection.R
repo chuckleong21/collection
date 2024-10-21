@@ -100,28 +100,31 @@ diff.collection <- function(x, y, compare = TRUE) {
   diff_switch <- function(x, y) {
     i <- nrow(x); j <- nrow(y)
     if(i == 0) {
-      diff <- "behind"
+      s <- "behind"
     } else {
       if(j > 0) {
         if(x$status == y$status & x$created_at == y$created_at) {
-          diff <- "identical"
+          s <- "identical"
         } else {
           if(y$status > x$status) {
-            diff <- "behind"
+            s <- "behind"
+          }
+          if(y$status < x$status) {
+            s <- "ahead"
           }
           if(y$status == x$status) {
             if(x$created_at > y$created_at) {
-              diff <- "ahead"
+              s <- "ahead"
             } else {
-              diff <- "behind"
+              s <- "behind"
             }
           }
         }
       } else {
-        diff <- "ahead"
+        s <- "ahead"
       }
     }
-    return(diff)
+    return(s)
   }
   
   diff_sid <- function(x, y) {
@@ -169,6 +172,7 @@ collection_get <- function(source = c("database", "import"),
   database$movie$status <- factor(database$movie$status, levels = c("想看", "在看","看过"), ordered = TRUE)
   database$music$status <- factor(database$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
   database$game$status <- factor(database$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
+  database$book$cover <- database$movie$cover <- database$music$cover <- database$game$cover <- NA_character_
   
   if("import" %in% source) {
     if(!is.null(file)) {
