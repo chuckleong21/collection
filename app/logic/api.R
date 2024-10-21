@@ -88,14 +88,15 @@ request.api <- function(api) {
 }
 
 # request method for API children classes
-request.douban <- function(douban_api) {
+request.douban <- function(douban_api, header_toml = NULL) {
   if(douban_api$schema == "game") {
     url_constructor <- 'https://www.douban.com/{douban_api[["schema"]]}/{douban_api[["id"]]}'
   } else {
     url_constructor <- 'https://{douban_api[["schema"]]}.{douban_api[["domain"]]}.com/subject/{douban_api[["id"]]}'
   }
   # iterate cookies until no errors are raised
-  headers <- headers()
+  header_toml <- header_toml %||% "app/static/headers.toml"
+  headers <- headers(header_toml)
   r <- map(headers, ~try({
     glue(url_constructor) |>
       request() |>
@@ -118,7 +119,7 @@ request.bangumi <- function(bangumi_api) {
   url_constructor <- 'https://{bangumi_api[["domain"]]}.tv/subject/{bangumi_api[["id"]]}'
   glue(url_constructor) |> 
     request() |>
-    req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
+    req_error(\(resp) resp$status_code %in% c(403, 404, 500, 502)) |>
     req_perform()
 }
 
@@ -139,10 +140,11 @@ fetch.api <- function(api) {
          call. = FALSE)
   }
 }
-fetch.douban <- function(x) {
-  r <- request(x)
+fetch.douban <- function(x, header_toml = NULL, xpath = NULL) {
+  header_toml <- header_toml %||% "app/static/headers.toml"
+  xpath <- xpath %||% read_toml("app/static/headers.toml")$xpaths$douban
+  r <- request(x, header_toml = header_toml)
   h <- httr2::resp_body_html(r)
-  xpath <- read_toml("app/static/headers.toml")$xpaths$douban
   
   if(identical(x$schema, "movie")) {
     res <- xpath$movie |> 
