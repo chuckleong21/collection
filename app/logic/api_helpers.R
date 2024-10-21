@@ -3,7 +3,8 @@ box::use(
           str_extract, str_remove_all, str_c],
   rvest[html_element, html_attr, html_text2], 
   purrr[reduce],
-  utils[head]
+  utils[head],
+  blogdown[read_toml]
 )
 
 box::use(
@@ -40,6 +41,17 @@ xpaths <- list(
     )
   )
 )
+
+#' @export
+headers <- function(toml = NULL) {
+  toml <- toml %||% "app/static/headers.toml"
+  headers <- blogdown::read_toml(toml)$headers
+  purrr::map(headers$Cookie, ~list(
+    Accept = headers$Accept, 
+    `User-Agent` = headers$`User-Agent`,
+    Cookie = .x
+  ))
+}
 
 #' @export
 fetch_douban_movie <- function(x, xpath) {

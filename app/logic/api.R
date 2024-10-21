@@ -78,27 +78,39 @@ request <- function(x, ...)  {
 request.character <- function(x) {
   httr2::request(x)
 }
-request.api <- function(api, headers = NULL) {
+request.api <- function(api) {
   if(inherits(api, "douban")) {
-    request.douban(douban_api = api, headers = headers)
+    request.douban(douban_api = api)
   } else if(inherits(api, "bangumi")) {
     request.bangumi(bangumi_api = api)
   }
 }
 
 # request method for API children classes
-request.douban <- function(douban_api, headers = NULL) {
-  headers <- headers %||% read_toml("app/static/headers.toml")$headers
+request.douban <- function(douban_api) {
   if(douban_api$schema == "game") {
     url_constructor <- 'https://www.douban.com/{douban_api[["schema"]]}/{douban_api[["id"]]}'
   } else {
     url_constructor <- 'https://{douban_api[["schema"]]}.{douban_api[["domain"]]}.com/subject/{douban_api[["id"]]}'
   }
-  glue(url_constructor) |>
-    request() |>
-    req_headers(!!!headers) |>
-    req_error(\(resp) resp$status %in% c(403, 404, 500, 502)) |>
-    req_perform()
+  # iterate cookies until no errors are raised
+  headers <- headers()
+  r <- purrr::map(headers, ~try({
+    glue(url_constructor) |>
+      request() |>
+      req_headers(!!!.x) |>
+      req_error(\(resp) resp$status_code %in% c(403, 404, 500, 502)) |>
+      req_perform()
+  }, silent = TRUE))
+  httr2_success <- purrr::map_vec(r, \(resp) inherits(resp, "httr2_response"))
+  if(all(httr2_success)) {
+    r <- magrittr::extract2(sample(r, 1), 1)
+  } else if(any(httr2_success)){
+    r <- r[[which(httr2_success)]]
+  } else {
+    r <- magrittr::extract2(sample(r, 1), 1)
+  }
+  r
 }
 
 request.bangumi <- function(bangumi_api) {
