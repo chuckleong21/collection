@@ -135,48 +135,52 @@ fetch.douban <- function(x) {
     res <- xpath$movie |> 
       map(~fetch_douban_movie(h, .x)) |>
       list_flatten(name_spec = "{inner}")
-    res$id <- NA_integer_
-    res$subject_id <- as.character(x$id)
-    res$type <- x$schema
-    res$status <- NA_character_
-    res$my_rating <- NA_real_
-    res$url <- r$url
-    res$created_at <- force_tz(now(), "UTC")
+  }
+  if(identical(x$schema, "book")) {
+    res <- xpath$book |> 
+      map(~fetch_douban_book(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+  }
+  if(identical(x$schema, "music")) {
+    res <- xpath$music |> 
+      map(~fetch_douban_music(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+  }
+  if(identical(x$schema, "game")) {
+    res <- xpath$game |>
+      map(~fetch_douban_game(h, .x)) |>
+      list_flatten(name_spec = "{inner}")
+  }
+  res$id <- NA_integer_
+  res$subject_id <- as.character(x$id)
+  res$type <- x$schema
+  res$status <- NA_character_
+  res$my_rating <- NA_real_
+  res$url <- r$url
+  res$created_at <- force_tz(now(), "UTC")
+  
+  if(identical(x$schema, "movie")) {
     return(as_tibble(res) |>
              select(id, subject_id, type, title, cover, year, region,
                     genre, director, starring, status, rating, my_rating,
                     url, created_at))
   }
   if(identical(x$schema, "book")) {
-    res <- xpath$book |> 
-      map(~fetch_douban_book(h, .x)) |>
-      list_flatten(name_spec = "{inner}")
-    res$id <- NA_integer_
-    res$subject_id <- as.character(x$id)
-    res$type <- x$schema
-    res$status <- NA_character_
-    res$my_rating <- NA_real_
-    res$url <- r$url
-    res$created_at <- force_tz(now(), "UTC")
     return(as_tibble(res) |>
              select(id, subject_id, type, title, cover, year, author,
                     publisher, status, rating, my_rating, url, created_at))
   }
   if(identical(x$schema, "music")) {
-    res <- xpath$music |> 
-      map(~fetch_douban_music(h, .x)) |>
-      list_flatten(name_spec = "{inner}")
-    res$id <- NA_integer_
-    res$subject_id <- as.character(x$id)
-    res$type <- x$schema
-    res$status <- NA_character_
-    res$my_rating <- NA_real_
-    res$url <- r$url
-    res$created_at <- force_tz(now(), "UTC")
     return(as_tibble(res) |>
              select(id, subject_id, type, title, cover, year, performer,
                     status, rating, my_rating, url, created_at))
   }
+  if(identical(x$schema, "game")) {
+    return(as_tibble(res) |>
+             select(id, subject_id, type, title, cover, category, developer, 
+                    release, status, rating, my_rating, url, created_at))
+  }
+  stop("Out-of-scope schema", call. = FALSE)
 }
 
 

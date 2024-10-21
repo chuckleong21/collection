@@ -6,6 +6,10 @@ box::use(
   utils[head]
 )
 
+box::use(
+  app/logic/import_helpers[...]
+)
+
 #' @export
 xpaths <- list(
   douban = list(
@@ -27,6 +31,12 @@ xpaths <- list(
       title = '//*[@id="wrapper"]/h1/span', 
       info = '//*[@id="info"]', 
       rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
+    ),
+    game = c(
+      cover  = '//*[@class="pic"]/a/img', 
+      title  = '//*[@id="content"]/h1',
+      info   = '//*[@class="thing-attr"]',
+      rating = '//*[@id="interest_sectl"]/div/div[2]/strong'
     )
   )
 )
@@ -117,5 +127,28 @@ fetch_douban_music <- function(x, xpath) {
     return(list(performer = performer, year = year))
   }
   rvest::html_element(x, xpath = xpath) |> 
+    rvest::html_text2()
+}
+
+#' @export
+fetch_douban_game <- function(x, xpath) {
+  if(stringr::str_detect(xpath, "img")) {
+    return(rvest::html_element(x, xpath = xpath) |> 
+             rvest::html_attr("src"))
+  }
+  if(stringr::str_detect(xpath, "thing")) {
+    info <- rvest::html_element(x, xpath = xpath) |>
+      rvest::html_text2() |>
+      stringr::str_split("\\n", simplify = TRUE) |>
+      as.vector()
+    category <- info[stringr::str_which(info, "类型") + 1] |>
+      stringr::str_extract_all(games_regex("type")) |>
+      purrr::map_chr(~paste0(.x, collapse = " "))
+    developer <- info[stringr::str_which(info, "开发商") + 1]
+    release <- info[stringr::str_which(info, "发行日期") + 1]
+    return(list(category = category, developer = developer, 
+                release = release))
+  }
+  rvest::html_element(x, xpath = xpath) |>
     rvest::html_text2()
 }
