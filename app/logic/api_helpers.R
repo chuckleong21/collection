@@ -1,52 +1,22 @@
 box::use(
   stringr[str_detect, str_split, str_which, str_replace,
-          str_extract, str_remove_all, str_c],
+          str_extract, str_extract_all, str_remove_all, str_c],
   rvest[html_element, html_attr, html_text2], 
-  purrr[reduce],
+  purrr[reduce, map, map_vec],
   utils[head],
-  blogdown[read_toml]
+  blogdown[read_toml],
+  lubridate[as_date, year]
 )
 
 box::use(
-  app/logic/import_helpers[...]
-)
-
-#' @export
-xpaths <- list(
-  douban = list(
-    movie = c(
-      cover  = '//*[@id="mainpic"]/a/img', 
-      title  = '//*[@id="content"]/h1/span[1]', 
-      year   = '//*[@id="content"]/h1/span[2]',
-      info   = '//*[@id="info"]', 
-      rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
-    ),
-    book = c(
-      cover  = '//*[@id="mainpic"]/a/img', 
-      title  = '//*[@id="wrapper"]/h1/span', 
-      info   = '//*[@id="info"]', 
-      rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
-    ),
-    music = c(
-      cover = '//*[@id="mainpic"]/span/a/img', 
-      title = '//*[@id="wrapper"]/h1/span', 
-      info = '//*[@id="info"]', 
-      rating = '//*[@id="interest_sectl"]/div[1]/div[2]/strong'
-    ),
-    game = c(
-      cover  = '//*[@class="pic"]/a/img', 
-      title  = '//*[@id="content"]/h1',
-      info   = '//*[@class="thing-attr"]',
-      rating = '//*[@id="interest_sectl"]/div/div[2]/strong'
-    )
-  )
+  app/logic/import_helpers[games_regex]
 )
 
 #' @export
 headers <- function(toml = NULL) {
   toml <- toml %||% "app/static/headers.toml"
-  headers <- blogdown::read_toml(toml)$headers
-  purrr::map(headers$Cookie, ~list(
+  headers <- read_toml(toml)$headers
+  map(headers$Cookie, ~list(
     Accept = headers$Accept, 
     `User-Agent` = headers$`User-Agent`,
     Cookie = .x
@@ -119,48 +89,48 @@ fetch_douban_book <- function(x, xpath) {
 
 #' @export
 fetch_douban_music <- function(x, xpath) {
-  if(stringr::str_detect(xpath, "img")) {
-    return(rvest::html_element(x, xpath = xpath) |> 
-             rvest::html_attr("src"))
+  if(str_detect(xpath, "img")) {
+    return(html_element(x, xpath = xpath) |> 
+             html_attr("src"))
   }
-  if(stringr::str_detect(xpath, "info")) {
+  if(str_detect(xpath, "info")) {
     info <- html_element(x, xpath = xpath) |> 
       html_text2() |>
       str_split("\\n", simplify = TRUE) |>
       as.vector()
-    performer <- info[stringr::str_which(info, "^表演者:\\s(.+)")] |>
-      stringr::str_remove_all("/ ") |>
-      stringr::str_replace(".*(?:表演者: )", "")
-    year <- info[stringr::str_which(info, "^发行时间:\\s(.+)")] |>
-      stringr::str_replace(".*(?:发行时间:\\s)", "") |>
-      lubridate::as_date() |> 
-      lubridate::year() |>
+    performer <- info[str_which(info, "^表演者:\\s(.+)")] |>
+      str_remove_all("/ ") |>
+      str_replace(".*(?:表演者: )", "")
+    year <- info[str_which(info, "^发行时间:\\s(.+)")] |>
+      str_replace(".*(?:发行时间:\\s)", "") |>
+      as_date() |> 
+      year() |>
       as.character()
     return(list(performer = performer, year = year))
   }
-  rvest::html_element(x, xpath = xpath) |> 
-    rvest::html_text2()
+  html_element(x, xpath = xpath) |> 
+    html_text2()
 }
 
 #' @export
 fetch_douban_game <- function(x, xpath) {
-  if(stringr::str_detect(xpath, "img")) {
-    return(rvest::html_element(x, xpath = xpath) |> 
-             rvest::html_attr("src"))
+  if(str_detect(xpath, "img")) {
+    return(html_element(x, xpath = xpath) |> 
+             html_attr("src"))
   }
-  if(stringr::str_detect(xpath, "thing")) {
-    info <- rvest::html_element(x, xpath = xpath) |>
-      rvest::html_text2() |>
-      stringr::str_split("\\n", simplify = TRUE) |>
+  if(str_detect(xpath, "thing")) {
+    info <- html_element(x, xpath = xpath) |>
+      html_text2() |>
+      str_split("\\n", simplify = TRUE) |>
       as.vector()
-    category <- info[stringr::str_which(info, "类型") + 1] |>
-      stringr::str_extract_all(games_regex("type")) |>
-      purrr::map_chr(~paste0(.x, collapse = " "))
-    developer <- info[stringr::str_which(info, "开发商") + 1]
-    release <- info[stringr::str_which(info, "发行日期") + 1]
+    category <- info[str_which(info, "类型") + 1] |>
+      str_extract_all(games_regex("type")) |>
+      map_vec(~paste0(.x, collapse = " "))
+    developer <- info[str_which(info, "开发商") + 1]
+    release <- info[str_which(info, "发行日期") + 1]
     return(list(category = category, developer = developer, 
                 release = release))
   }
-  rvest::html_element(x, xpath = xpath) |>
-    rvest::html_text2()
+  html_element(x, xpath = xpath) |>
+    html_text2()
 }
