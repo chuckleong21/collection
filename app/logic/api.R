@@ -7,9 +7,10 @@ box::use(
   glue[glue], 
   assertthat[assert_that],
   utils[head],
-  purrr[map, list_flatten],
+  purrr[map, map_vec, list_flatten],
   lubridate[force_tz, now],
-  dplyr[as_tibble, select]
+  dplyr[as_tibble, select],
+  magrittr[extract2]
 )
 
 box::use(
@@ -95,20 +96,20 @@ request.douban <- function(douban_api) {
   }
   # iterate cookies until no errors are raised
   headers <- headers()
-  r <- purrr::map(headers, ~try({
+  r <- map(headers, ~try({
     glue(url_constructor) |>
       request() |>
       req_headers(!!!.x) |>
       req_error(\(resp) resp$status_code %in% c(403, 404, 500, 502)) |>
       req_perform()
   }, silent = TRUE))
-  httr2_success <- purrr::map_vec(r, \(resp) inherits(resp, "httr2_response"))
+  httr2_success <- map_vec(r, \(resp) inherits(resp, "httr2_response"))
   if(all(httr2_success)) {
-    r <- magrittr::extract2(sample(r, 1), 1)
+    r <- extract2(sample(r, 1), 1)
   } else if(any(httr2_success)){
     r <- r[[which(httr2_success)]]
   } else {
-    r <- magrittr::extract2(sample(r, 1), 1)
+    r <- extract2(sample(r, 1), 1)
   }
   r
 }
@@ -141,7 +142,7 @@ fetch.api <- function(api) {
 fetch.douban <- function(x) {
   r <- request(x)
   h <- httr2::resp_body_html(r)
-  xpath <- xpaths$douban
+  xpath <- read_toml("app/static/headers.toml")$xpaths$douban
   
   if(identical(x$schema, "movie")) {
     res <- xpath$movie |> 
@@ -192,7 +193,6 @@ fetch.douban <- function(x) {
              select(id, subject_id, type, title, cover, category, developer, 
                     release, status, rating, my_rating, url, created_at))
   }
-  stop("Out-of-scope schema", call. = FALSE)
 }
 
 
