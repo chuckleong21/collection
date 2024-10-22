@@ -1130,6 +1130,39 @@
       ],
       "Hash": "6a293995a66e12c48d13aa1f957d09c7"
     },
+    "shiny.fluent": {
+      "Package": "shiny.fluent",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "htmltools",
+        "jsonlite",
+        "purrr",
+        "shiny",
+        "shiny.react"
+      ],
+      "Hash": "b3bfeca60e3a4ce92effc664a8594f9a"
+    },
+    "shiny.react": {
+      "Package": "shiny.react",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "glue",
+        "htmltools",
+        "jsonlite",
+        "logger",
+        "methods",
+        "purrr",
+        "rlang",
+        "shiny",
+        "stringi"
+      ],
+      "Hash": "fa57edbccd143b66d9214208a3273bc6"
+    },
     "sourcetools": {
       "Package": "sourcetools",
       "Version": "0.1.7-1",
