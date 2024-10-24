@@ -6,10 +6,10 @@ box::use(
           str_extract_all, str_extract,
           str_replace_all, str_replace], 
   openxlsx2[read_xlsx], 
-  dplyr[mutate, as_tibble, filter, arrange, row_number,
+  dplyr[mutate, as_tibble, filter, arrange, row_number, transmute,
         rename, case_when, select, relocate, group_by, ungroup],
   tidyr[drop_na, unnest_wider], 
-  lubridate[ymd_hms],
+  lubridate[ymd_hms, as_date],
   stats[na.omit], 
   utils[head, tail]
 )
@@ -102,20 +102,18 @@ clean_import <- function(data, which = NULL) {
     data <- switch(
       which, 
       "movie" = data |> 
-        select(id, subject_id, type, title, year, region, genre, director, 
+        transmute(id, subject_id = as.integer(subject_id), type, title, year = as.integer(year), region, genre, director, 
                starring, status, rating, my_rating, 
-               url, created_at) |>
-        mutate(cover = NA_character_) |> 
-        relocate(cover, .after = title), 
+               url, created_at, cover = NA_character_, site = NA_character_) |>
+        relocate(cover, .after = title) |> 
+        relocate(site, .after = starring),
       "music" = data |> 
-        select(id, subject_id, type, title, year, performer, status, rating,
-               my_rating, url, created_at) |>
-        mutate(cover = NA_character_) |> 
+        transmute(id, subject_id = as.integer(subject_id), type, title, year = as.integer(year), performer, status, rating,
+               my_rating, url, created_at, cover = NA_character_) |>
         relocate(cover, .after = title), 
       "book" = data |> 
-        select(id, subject_id, type, title, year, author, publisher, 
-               status, rating, my_rating, url, created_at) |>
-        mutate(cover = NA_character_) |> 
+        transmute(id, subject_id = as.integer(subject_id), type, title, year = as.integer(year), author, publisher, 
+               status, rating, my_rating, url, created_at, cover = NA_character_) |>
         relocate(cover, .after = title)
     )
     return(data)
@@ -138,9 +136,8 @@ clean_import <- function(data, which = NULL) {
         intro = str_replace(intro, "/?$", ""), 
         developer = str_extract(intro, "[^/]+$")
       ) |> 
-      select(id, subject_id, type, title, category, developer, 
-             release, status, rating, my_rating, url, created_at) |>
-      mutate(cover = NA_character_) |> 
+      transmute(id, subject_id = as.integer(subject_id), type, title, category, developer, 
+             release = as_date(release), status, rating, my_rating, url, created_at, cover = NA_character_) |>
       relocate(cover, .after = title)
     return(data)
   }
