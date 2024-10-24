@@ -3,8 +3,7 @@ box::use(
   purrr[map, map_vec, list_rbind, map2, iwalk, walk2],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect, dbWriteTable],
-  dplyr[tbl, collect, select, filter, case_when, mutate, setequal, 
-        arrange, rows_upsert, row_number],
+  dplyr[tbl, collect, select, filter, case_when, mutate],
   waldo[compare],
   assertthat[assert_that, `on_failure<-`],
   openxlsx2[write_xlsx]
