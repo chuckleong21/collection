@@ -10,5 +10,3 @@ box::use(
 database <- collection("database")
 fill(database)
 
-
-
