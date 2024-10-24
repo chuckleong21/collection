@@ -11,6 +11,8 @@ branch <- function(diff) {
 branch.collection_diff <- function(x) {
   map(x$diff, ~.x$branch)
 }
+
+e <- new.env()
 local(envir = e, {
   branch.collection_diff
   .S3method("branch", "collection_diff")
