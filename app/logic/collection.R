@@ -27,7 +27,7 @@ collection_get <- function(source = c("database", "import"),
   collection_names <- c(book = "book", game = "game", 
                         movie = "movie", music = "music")
   
-  dbdir <- dbdir %||% "app/logic/database.duckdb"
+  dbdir <- dbdir %||% "app/static/database.duckdb"
   con <- dbConnect(duckdb(dbdir = dbdir))
   database <- map(collection_names, \(x) {
     tbl(con, x) |> collect()
