@@ -85,7 +85,7 @@ request.collection <- function(collection) {
 }
 
 request.collection_diff <- function(x) {
-  u <- purrr::map(branch(d), 
+  u <- purrr::map(branch(x), 
                   ~ tibble::tibble(subject_id = .x$subject_id, 
                                    url = .x$url)) |>
     purrr::list_rbind() |>
