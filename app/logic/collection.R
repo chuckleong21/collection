@@ -1,6 +1,6 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[imap, map, set_names, map_vec, map2, iwalk, walk2, list_rbind],
+  purrr[map, map_vec, list_rbind, map2, iwalk],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect, dbWriteTable],
   dplyr[tbl, collect, select, filter, case_when, mutate, setequal, 
@@ -16,143 +16,7 @@ box::use(
 
 # explicit register S3 method for box module
 
-# collection method -------------------------------------------------------
-
-e <- new.env()
-local(envir = e, {
-  print.collection <- function(x, ...) {
-    desc_na <- function(x) {
-      ifelse(!is.na(x), x, 0)
-    }
-    col_steelblue4 <- combine_ansi_styles("steelblue4")
-    col_movie <- combine_ansi_styles("#47c5f1")
-    col_music <- combine_ansi_styles("#ed764d")
-    col_book <- combine_ansi_styles("#65c272")
-    col_game <- combine_ansi_styles("#f9af3f")
-    
-    if(length(x$source) == 1) {
-      x_desc <- map(x$data, \(i) {
-        split(i, i$status) |> 
-          map_vec(\(d) nrow(d))
-      })
-    } else {
-      x_desc <- map(x$data, \(i) {
-        map(i, \(j) split(j, j$status) |> map_vec(\(d) nrow(d)))
-      })
-    }
-    if(length(x$source) == 1) {
-      cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(x$source))), 
-          col_movie("Movie"), "\t\t    |",
-          col_music("Music"), "\t   |", 
-          col_book("Books"), "     |", 
-          col_game("Games"), "\n",
-          paste0("看过", col_movie(x_desc$movie["看过"]), "部电影电视剧"), " |", 
-          paste0("听过", col_music(x_desc$music["听过"]), "张专辑"), "|",
-          paste0("读过", col_book(x_desc$book["读过"]), "本书"),  " |",
-          paste0("玩过", col_game(x_desc$game["玩过"]), "款游戏"), "\n",
-          paste0("在看", col_movie(desc_na(x_desc$movie["在看"])), "部电影电视剧"), "   |", 
-          paste0("在听", col_music(desc_na(x_desc$music["在听"])), "张专辑"), "  |",
-          paste0("在读", col_book(desc_na(x_desc$book["在读"])), "本书"),  "  |",
-          paste0("在玩", col_game(desc_na(x_desc$game["在玩"])), "款游戏"), "\n",
-          paste0("想看", col_movie(desc_na(x_desc$movie["想看"])), "部电影电视剧"), "  |", 
-          paste0("想听", col_music(desc_na(x_desc$music["想听"])), "张专辑"), "  |",
-          paste0("想读", col_book(desc_na(x_desc$book["想读"])), "本书"),  "  |",
-          paste0("想玩", col_game(desc_na(x_desc$game["想玩"])), "款游戏"), "\n"
-      )
-    } else {
-      walk2(x_desc, x$source, \(u, v) {
-        cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(v))), 
-            col_movie("Movie"), "\t\t    |",
-            col_music("Music"), "\t   |", 
-            col_book("Books"), "     |", 
-            col_game("Games"), "\n",
-            paste0("看过", col_movie(u$movie["看过"]), "部电影电视剧"), " |", 
-            paste0("听过", col_music(u$music["听过"]), "张专辑"), "|",
-            paste0("读过", col_book(u$book["读过"]), "本书"),  " |",
-            paste0("玩过", col_game(u$game["玩过"]), "款游戏"), "\n",
-            paste0("在看", col_movie(desc_na(u$movie["在看"])), "部电影电视剧"), "   |", 
-            paste0("在听", col_music(desc_na(u$music["在听"])), "张专辑"), "  |",
-            paste0("在读", col_book(desc_na(u$book["在读"])), "本书"),  "  |",
-            paste0("在玩", col_game(desc_na(u$game["在玩"])), "款游戏"), "\n",
-            paste0("想看", col_movie(desc_na(u$movie["想看"])), "部电影电视剧"), "  |", 
-            paste0("想听", col_music(desc_na(u$music["想听"])), "张专辑"), "  |",
-            paste0("想读", col_book(desc_na(u$book["想读"])), "本书"),  "  |",
-            paste0("想玩", col_game(desc_na(u$game["想玩"])), "款游戏"), "\n"
-        )
-      })
-    }
-  }
-  .S3method("print", "collection")
-})
-#' Compare Collections
-#'
-#' @param x Collection get from database.
-#' @param y Collection get from an external file
-#' @param compare Whether to compare x and y
-#'
-#' @return A \code{collection_diff} object
-#' @export
-diff.collection <- function(x, y, compare = TRUE) {
-  stopifnot('sources in "x" is not unique' = length(x$source) == 1)
-  stopifnot('sources in "y" is not unique' = length(y$source) == 1)
-  stopifnot('source in "x" is not from "database"' = x$source == "database")
-  stopifnot('source in "y" is not from "import"' = y$source == "import")
-  diff_switch <- function(x, y) {
-    i <- nrow(x); j <- nrow(y)
-    if(i == 0) {
-      s <- "behind"
-    } else {
-      if(j > 0) {
-        if(x$status == y$status & x$created_at == y$created_at) {
-          s <- "identical"
-        } else {
-          if(y$status > x$status) {
-            s <- "behind"
-          }
-          if(y$status < x$status) {
-            s <- "ahead"
-          }
-          if(y$status == x$status) {
-            if(x$created_at > y$created_at) {
-              s <- "ahead"
-            } else {
-              s <- "behind"
-            }
-          }
-        }
-      } else {
-        s <- "ahead"
-      }
-    }
-    return(s)
-  }
-  
-  diff_sid <- function(x, y) {
-    sid <- unique(c(x$subject_id, y$subject_id))
-    compare_sid <- map_vec(seq_along(sid), \(i) {
-      u <- filter(x, subject_id == sid[i]) |> select(-id)
-      v <- filter(y, subject_id == sid[i]) |> select(-id)
-      diff_switch(x = u, y = v)
-    })
-    branch <- map(c("behind", "ahead"), \(k) {
-      filter(y, subject_id %in% sid[which(compare_sid == k)]) |> 
-        mutate(diff = k) |>
-        select(-id)
-    }) |> list_rbind()
-    main <- filter(x, subject_id %in% branch$subject_id) |> 
-      select(-id)
-    list(main = main, branch = branch)
-  }
-  out <- map2(x$data, y$data, \(x, y) {
-    diff_sid(x, y)
-  })
-  # out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
-  structure(list(compare = compare, diff = out), class = "collection_diff")
-}
-local(envir = e, {
-  diff.collection
-  .S3method("diff", "collection")
-})
+# collection class -------------------------------------------------------
 
 collection_get <- function(source = c("database", "import"), 
                            file = NULL, dbdir = NULL) {
@@ -230,6 +94,137 @@ collection <- function(source = c("database", "import"),
   collection_get(source = source, file = file, dbdir = dbdir)
 }
 
+print.collection <- function(x, ...) {
+    desc_na <- function(x) {
+      ifelse(!is.na(x), x, 0)
+    }
+    col_steelblue4 <- combine_ansi_styles("steelblue4")
+    col_movie <- combine_ansi_styles("#47c5f1")
+    col_music <- combine_ansi_styles("#ed764d")
+    col_book <- combine_ansi_styles("#65c272")
+    col_game <- combine_ansi_styles("#f9af3f")
+    
+    if(length(x$source) == 1) {
+      x_desc <- map(x$data, \(i) {
+        split(i, i$status) |> 
+          map_vec(\(d) nrow(d))
+      })
+    } else {
+      x_desc <- map(x$data, \(i) {
+        map(i, \(j) split(j, j$status) |> map_vec(\(d) nrow(d)))
+      })
+    }
+    if(length(x$source) == 1) {
+      cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(x$source))), 
+          col_movie("Movie"), "\t\t    |",
+          col_music("Music"), "\t   |", 
+          col_book("Books"), "     |", 
+          col_game("Games"), "\n",
+          paste0("看过", col_movie(x_desc$movie["看过"]), "部电影电视剧"), " |", 
+          paste0("听过", col_music(x_desc$music["听过"]), "张专辑"), "|",
+          paste0("读过", col_book(x_desc$book["读过"]), "本书"),  " |",
+          paste0("玩过", col_game(x_desc$game["玩过"]), "款游戏"), "\n",
+          paste0("在看", col_movie(desc_na(x_desc$movie["在看"])), "部电影电视剧"), "   |", 
+          paste0("在听", col_music(desc_na(x_desc$music["在听"])), "张专辑"), "  |",
+          paste0("在读", col_book(desc_na(x_desc$book["在读"])), "本书"),  "  |",
+          paste0("在玩", col_game(desc_na(x_desc$game["在玩"])), "款游戏"), "\n",
+          paste0("想看", col_movie(desc_na(x_desc$movie["想看"])), "部电影电视剧"), "  |", 
+          paste0("想听", col_music(desc_na(x_desc$music["想听"])), "张专辑"), "  |",
+          paste0("想读", col_book(desc_na(x_desc$book["想读"])), "本书"),  "  |",
+          paste0("想玩", col_game(desc_na(x_desc$game["想玩"])), "款游戏"), "\n"
+      )
+    } else {
+      walk2(x_desc, x$source, \(u, v) {
+        cat(col_steelblue4(sprintf("<Collection>:%s\n", style_italic(v))), 
+            col_movie("Movie"), "\t\t    |",
+            col_music("Music"), "\t   |", 
+            col_book("Books"), "     |", 
+            col_game("Games"), "\n",
+            paste0("看过", col_movie(u$movie["看过"]), "部电影电视剧"), " |", 
+            paste0("听过", col_music(u$music["听过"]), "张专辑"), "|",
+            paste0("读过", col_book(u$book["读过"]), "本书"),  " |",
+            paste0("玩过", col_game(u$game["玩过"]), "款游戏"), "\n",
+            paste0("在看", col_movie(desc_na(u$movie["在看"])), "部电影电视剧"), "   |", 
+            paste0("在听", col_music(desc_na(u$music["在听"])), "张专辑"), "  |",
+            paste0("在读", col_book(desc_na(u$book["在读"])), "本书"),  "  |",
+            paste0("在玩", col_game(desc_na(u$game["在玩"])), "款游戏"), "\n",
+            paste0("想看", col_movie(desc_na(u$movie["想看"])), "部电影电视剧"), "  |", 
+            paste0("想听", col_music(desc_na(u$music["想听"])), "张专辑"), "  |",
+            paste0("想读", col_book(desc_na(u$book["想读"])), "本书"),  "  |",
+            paste0("想玩", col_game(desc_na(u$game["想玩"])), "款游戏"), "\n"
+        )
+      })
+    }
+  }
+
+#' Compare Collections
+#'
+#' @param x Collection get from database.
+#' @param y Collection get from an external file
+#' @param compare Whether to compare x and y
+#'
+#' @return A \code{collection_diff} object
+#' @export
+diff.collection <- function(x, y, compare = TRUE) {
+  stopifnot('sources in "x" is not unique' = length(x$source) == 1)
+  stopifnot('sources in "y" is not unique' = length(y$source) == 1)
+  stopifnot('source in "x" is not from "database"' = x$source == "database")
+  stopifnot('source in "y" is not from "import"' = y$source == "import")
+  diff_switch <- function(x, y) {
+    i <- nrow(x); j <- nrow(y)
+    if(i == 0) {
+      s <- "behind"
+    } else {
+      if(j > 0) {
+        if(x$status == y$status & x$created_at == y$created_at) {
+          s <- "identical"
+        } else {
+          if(y$status > x$status) {
+            s <- "behind"
+          }
+          if(y$status < x$status) {
+            s <- "ahead"
+          }
+          if(y$status == x$status) {
+            if(x$created_at > y$created_at) {
+              s <- "ahead"
+            } else {
+              s <- "behind"
+            }
+          }
+        }
+      } else {
+        s <- "ahead"
+      }
+    }
+    return(s)
+  }
+  
+  diff_sid <- function(x, y) {
+    sid <- unique(c(x$subject_id, y$subject_id))
+    compare_sid <- map_vec(seq_along(sid), \(i) {
+      u <- filter(x, subject_id == sid[i]) |> select(-id)
+      v <- filter(y, subject_id == sid[i]) |> select(-id)
+      diff_switch(x = u, y = v)
+    })
+    branch <- map(c("behind", "ahead"), \(k) {
+      filter(y, subject_id %in% sid[which(compare_sid == k)]) |> 
+        mutate(diff = k) |>
+        select(-id)
+    }) |> list_rbind()
+    main <- filter(x, subject_id %in% branch$subject_id) |> 
+      select(-id)
+    list(main = main, branch = branch)
+  }
+  out <- map2(x$data, y$data, \(x, y) {
+    diff_sid(x, y)
+  })
+  # out <- out[which(!map(out, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)]
+  structure(list(compare = compare, diff = out), class = "collection_diff")
+}
+
+
+
 write_collection_xlsx <- function(collection, file) {
   assert_that(inherits(collection, "collection"), 
               length(file) == 1,
@@ -275,14 +270,6 @@ write_collection <- function(collection,
 
 # collection_diff class --------------------------------------------------
 
-# branch method
-#' @export
-branch <- function(diff) {
-  UseMethod("branch")
-}
-branch.collection_diff <- function(x) {
-  map(x$diff, ~.x$branch)
-}
 print.collection_diff <- function(x) {
   if(x$compare) {
     is_identical <- all(map(x$diff, \(x) map_vec(x, nrow)) |> map_vec(sum) == 0)
@@ -300,53 +287,22 @@ print.collection_diff <- function(x) {
   
 }
 
-# merge method
-#' @export
-merge <- function(x, y, ...) {
-  UseMethod("merge")
-}
-merge.collection_diff <- function(diff, database = NULL) {
-  on.exit(message(sprintf("updated %g records", updates)), add = TRUE)
-  is_database <- function(x) {
-    assert_that(inherits(x, "collection"))
-    x$source == "database"
-  }
-  on_failure(is_database) <- function(call, env) {
-    paste0(deparse(call$x), " is not a database collection")
-  }
-  database <- database %||% collection("database")
-  assert_that(is_database(database))
-  
-  out <- map2(branch(diff), database$data, \(x, y) {
-    rows_upsert(y, 
-                filter(x, diff == "behind") |> 
-                  select(-diff), 
-                by = "subject_id")
-  }) 
-  updates <- out |>
-    map_vec(~(length(which(is.na(.x$id))))) |> 
-    sum()
-  out <- out |>
-    map(~(arrange(.x, created_at) |> 
-            mutate(id = row_number())))
-  structure(list(source = "database", data = out), class = "collection")
-}
-merge.data.frame <- function(x, y, ...) {
-  merge.data.frame(x, y, ...)
-}
-merge.default <- function(x, y, ...) {
-  merge.default(x, y, ...)
-}
 
-local(envir = e, {
-  branch.collection_diff
-  .S3method("branch", "collection_diff")
-})
+e <- new.env()
 local(envir = e, {
   print.collection_diff
   .S3method("print", "collection_diff")
 })
 local(envir = e, {
-  merge.collection_diff 
-  .S3method("merge", "collection_diff")
+  diff.collection
+  .S3method("diff", "collection")
+})
+local(envir = e, {
+  print.collection
+  .S3method("print", "collection")
+})
+
+local(envir = e, {
+  diff.collection
+  .S3method("diff", "collection")
 })
