@@ -83,6 +83,22 @@ request.collection <- function(collection) {
   out
 }
 
+request.collection_diff <- function(x) {
+  u <- purrr::map(branch(d), 
+                  ~ tibble::tibble(subject_id = .x$subject_id, 
+                                   url = .x$url)) |>
+    purrr::list_rbind() |>
+    dplyr::select(-subject_id)
+  if(nrow(u) == 0) return(tibble::tibble(url = character(), html = character()))
+  dplyr::mutate(u, html = purrr::map(url, \(x) {
+    api(x) |>
+      request() |>
+      magrittr::extract2("body")
+  }, .progress = TRUE), 
+  html = purrr::map_vec(html, \(h) rawToChar(h[!h == '00'])))
+}
+
+
 e <- new.env()
 local(envir = e, {
   request.character
@@ -93,6 +109,10 @@ local(envir = e, {
   .S3method("request", "api")
 })
 local(envir = e, {
-  request.api
+  request.collection
   .S3method("request", "collection")
+})
+local(envir = e, {
+  request.collection_diff
+  .S3method("request", "collection_diff")
 })
