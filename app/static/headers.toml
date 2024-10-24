@@ -2,8 +2,7 @@
 Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
 User-Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0"
 Cookie = [
-'douban-fav-remind=1; bid=PJ7wxuLF0KY; __yadk_uid=Un3DIzvu8boXRdtlLyCD5C1Y2FLcFIOD; dbcl2="58485907:8w/HEIYyOWY"; ck=m7WF; push_noty_num=0; push_doumail_num=0; frodotk_db="581281aa2f8fd2ae083784fe8eaf780a"; ap_v=0,6.0',
-'douban-fav-remind=1; bid=PJ7wxuLF0KY; __yadk_uid=Un3DIzvu8boXRdtlLyCD5C1Y2FLcFIOD; push_doumail_num=0; push_noty_num=0; viewed="36879010"; dbcl2="58485907:el5wtdxyTno"; ck=RrMU; frodotk_db="1a1986ea9ca560944e4c94bfd5f021bc"; ap_v=0,6.0'
+'ll="118281"; bid=i-6PhlKsq5g; douban-fav-remind=1; push_doumail_num=0; ct=y; frodotk_db="950be704ca9887afbf23b50e5fc9970d"; ap_v=0,6.0; dbcl2="58485907:6wqHFC5z6kM"; ck=Wl3N; push_noty_num=0'
 ]
 
 
