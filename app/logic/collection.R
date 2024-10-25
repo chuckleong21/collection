@@ -35,7 +35,6 @@ collection_get <- function(source = c("database", "import"),
   database$movie$status <- factor(database$movie$status, levels = c("想看", "在看","看过"), ordered = TRUE)
   database$music$status <- factor(database$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
   database$game$status <- factor(database$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
-  database$book$cover <- database$movie$cover <- database$music$cover <- database$game$cover <- NA_character_
   
   if("import" %in% source) {
     if(!is.null(file)) {
@@ -235,7 +234,7 @@ write_collection_xlsx <- function(collection, file) {
 write_collection_duckdb <- function(collection, dbdir = NULL) {
   on.exit(dbDisconnect(con), add = TRUE)
   assert_that(inherits(collection, "collection"))
-  dbdir <- dbdir %||% "app/logic/database.duckdb"
+  dbdir <- dbdir %||% "app/static/database.duckdb"
   assert_that(
     length(dbdir) == 1,
     "duckdb" == tools::file_ext(dbdir)
