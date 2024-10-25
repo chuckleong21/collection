@@ -22,7 +22,6 @@ box::use(
 #'
 #' @param file Scalar string. Path of the import file. Must be an .xlsx file
 #'
-#' @export
 #' @return A tibble
 read_import <- function(file) {
   stopifnot("INVALID FILE TYPE: expects xlsx file" = tools::file_ext(file) == "xlsx")
@@ -76,7 +75,6 @@ read_import <- function(file) {
     ungroup()
 }
 
-#' @export
 clean_import <- function(data, which = NULL) {
   nm <- switch(
     which, 

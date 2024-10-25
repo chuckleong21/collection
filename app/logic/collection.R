@@ -10,7 +10,7 @@ box::use(
 )
 
 box::use(
-  app/logic/read_import[...]
+  app/logic/import[from_import]
 )
 
 # explicit register S3 method for box module
