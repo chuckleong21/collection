@@ -16,7 +16,13 @@ merge <- function(x, y, ...) {
   UseMethod("merge")
 }
 merge.collection_diff <- function(diff, database = NULL) {
-  on.exit(message(sprintf("updated %g records", updates)), add = TRUE)
+  on.exit({
+    if(updates != 0) {
+      message(sprintf("updated %g records", updates))
+    } else {
+      message("database is up to date")
+    }
+  }, add = TRUE)
   is_database <- function(x) {
     assert_that(inherits(x, "collection"))
     x$source == "database"
