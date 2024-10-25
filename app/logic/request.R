@@ -2,11 +2,12 @@ box::use(
   glue[glue],
   httr2[req_headers, req_error, req_perform],
   magrittr[extract2],
-  purrr[map, map_vec],
+  purrr[map, map_vec, list_rbind],
   stats[runif],
   stringr[str_detect], 
   tibble[tibble],
-  dplyr[mutate]
+  dplyr[mutate, filter, tbl, collect],
+  DBI[dbConnect, dbDisconnect], duckdb[duckdb]
 )
 
 box::use(
@@ -85,19 +86,31 @@ request.collection <- function(collection) {
   out
 }
 
-request.collection_diff <- function(x) {
+request.collection_diff <- function(x, check_update = TRUE) {
   u <- purrr::map(branch(x), 
-                  ~ tibble::tibble(subject_id = .x$subject_id, 
-                                   url = .x$url)) |>
-    purrr::list_rbind() |>
-    dplyr::select(-subject_id)
-  if(nrow(u) == 0) return(tibble::tibble(url = character(), html = character()))
-  dplyr::mutate(u, html = purrr::map(url, \(x) {
-    api(x) |>
-      request() |>
-      magrittr::extract2("body")
-  }, .progress = TRUE), 
-  html = purrr::map_vec(html, \(h) rawToChar(h[!h == '00'])))
+                  ~ tibble::tibble(url = .x$url)) |>
+    list_rbind()
+  if(nrow(u) == 0) {
+    return(tibble(url = character(), html = character()))
+  }
+  if(nrow(u) != 0) {
+    if(check_update) {
+      con <- dbConnect(duckdb("app/static/requests.duckdb"))
+      requests <- con |>
+        tbl("requests") |>
+        collect()
+      dbDisconnect(con)
+      u <- filter(u, !url %in% requests$url)
+    } 
+    if(nrow(u) != 0) {
+      mutate(u, html = map(url, \(x) {
+        api(x) |>
+          request() |>
+          extract2("body")
+      }, .progress = TRUE), 
+      html = map_vec(html, \(h) rawToChar(h[!h == '00'])))
+    } else return(u)
+  } 
 }
 
 
