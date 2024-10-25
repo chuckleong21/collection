@@ -73,7 +73,6 @@ fill.collection <- function(collection, from = NULL, workers = 2) {
   con <- dbConnect(duckdb(dbpath))
   from <- from %||% con |>
     tbl("requests") |>
-    select(-subject_id) |>
     collect()
   assert_that(inherits(from, "data.frame"), "html" %in% colnames(from))
   
