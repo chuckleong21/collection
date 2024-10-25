@@ -7,15 +7,21 @@ box::use(
           str_replace_all, str_replace], 
   openxlsx2[read_xlsx], 
   dplyr[mutate, as_tibble, filter, arrange, row_number, transmute,
-        rename, case_when, select, relocate, group_by, ungroup],
+        rename, case_when, select, relocate, group_by, ungroup, 
+        setequal, tbl, collect, rows_upsert],
   tidyr[drop_na, unnest_wider], 
   lubridate[ymd_hms, as_date],
-  stats[na.omit], 
-  utils[head, tail]
+  stats[na.omit], tools[file_ext],
+  utils[head, tail, zip], 
+  DBI[dbConnect, dbDisconnect, dbWriteTable], duckdb[duckdb]
 )
 
 box::use(
-  app/logic/import_helpers[...]
+  app/logic/import_helpers[games_regex], 
+  app/logic/collection[collection, write_collection],
+  app/logic/diff[diff],
+  app/logic/request[request],
+  app/logic/merge[merge],
 )
 
 #' Import collection data
@@ -24,7 +30,7 @@ box::use(
 #'
 #' @return A tibble
 read_import <- function(file) {
-  stopifnot("INVALID FILE TYPE: expects xlsx file" = tools::file_ext(file) == "xlsx")
+  stopifnot("INVALID FILE TYPE: expects xlsx file" = file_ext(file) == "xlsx")
   sheet_regex <- c("^看.$|^.看$", "听", "读", "玩")
   meta_regex <- c("^https\\:\\/\\/([a-z]+)\\.douban\\.com\\/subject\\/(\\d+).$", 
                   "^https\\:\\/\\/www\\.douban\\.com\\/([a-z]+)\\/(\\d+).$")
@@ -167,4 +173,41 @@ from_import <- function(file) {
   collections$music$status <- factor(collections$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
   collections$game$status <- factor(collections$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
   collections
+}
+
+#' @export
+import_to_database <- function(file, dbdir = NULL) {
+  dbdir <- dbdir %||% "app/static/database.duckdb"
+  has_changed <- function(x, y) {
+    bool <- map2(x$data, y$data, setequal) |>
+      reduce(c)
+    all(!bool)
+  }
+  database <- collection("database")
+  message(sprintf('reading file "%s"...', file))
+  imported <- suppressWarnings(collection("import", file = file))
+  message("checking diff between import and database...")
+  d <- diff(database, imported)
+  rd <- request(d)
+  if(nrow(rd) != 0) {
+    con <- dbConnect(duckdb("app/static/requests.duckdb"))
+    requests <- con |>
+      tbl("requests") |>
+      collect()
+    rows_upsert(requests, rd, "url") |>
+      dbWriteTable(con, "requests", "url", overwrite = TRUE)
+    dbDisconnect(con)
+    zip("requests.zip", "app/static/requests.duckdb")
+  }
+  
+  message("merging import with database...")
+  m <- merge(d, database)
+  if(has_changed(database, m)) {
+    message("completing collection...")
+    f <- fill(m)
+    write_collection(f, "database", dbdir = dbdir)
+    message(sprintf("updated database %s", dbdir))
+  }
+  database <- collection("database")
+  database
 }
