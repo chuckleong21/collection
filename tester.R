@@ -54,8 +54,6 @@ import_to_database <- function(file, dbdir = NULL) {
     f <- fill(m)
     write_collection(f, "database", dbdir = dbdir)
     message(sprintf("updated database %s", dbdir))
-  } else {
-    message(sprintf("database %s is up to date", dbdir))
   }
   database <- collection("database")
   database
