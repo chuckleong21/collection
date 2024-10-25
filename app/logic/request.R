@@ -11,7 +11,8 @@ box::use(
 
 box::use(
   app/logic/api_helpers[headers],
-  app/logic/branch[branch]
+  app/logic/branch[branch],
+  app/logic/api[api]
 )
 
 
