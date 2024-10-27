@@ -292,10 +292,6 @@ local(envir = e, {
   .S3method("print", "collection_diff")
 })
 local(envir = e, {
-  diff.collection
-  .S3method("diff", "collection")
-})
-local(envir = e, {
   print.collection
   .S3method("print", "collection")
 })
