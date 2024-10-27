@@ -18,8 +18,7 @@ box::use(
 
 box::use(
   app/logic/import_helpers[games_regex], 
-  app/logic/collection[collection, write_collection],
-  app/logic/diff[diff],
+  app/logic/collection[collection, write_collection, diff.collection],
   app/logic/request[request],
   app/logic/merge[merge],
 )
