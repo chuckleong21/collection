@@ -181,7 +181,7 @@ from_import <- function(file) {
   collections$movie$status <- factor(collections$movie$status, levels = c("想看", "在看","看过"), ordered = TRUE)
   collections$music$status <- factor(collections$music$status, levels = c("想听", "在听","听过"), ordered = TRUE)
   collections$game$status <- factor(collections$game$status, levels = c("想玩", "在玩","玩过"), ordered = TRUE)
-  collections
+  structure(collections, class = "collection")
 }
 
 #' @export
