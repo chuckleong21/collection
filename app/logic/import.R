@@ -21,6 +21,7 @@ box::use(
   app/logic/collection[collection, write_collection, diff.collection],
   app/logic/request[request],
   app/logic/merge[merge],
+  app/logic/fill[fill]
 )
 
 #' Import collection data
@@ -210,9 +211,11 @@ import_to_database <- function(file, dbdir = NULL) {
   
   message("merging import with database...")
   m <- merge(d, database)
-  if(has_changed(database, m)) {
+  empty_cover <- any(map_vec(m$data, \(d) any(is.na(d$cover))))
+  if(has_changed(database, m) | empty_cover) {
     message("completing collection...")
     f <- fill(m)
+    message("writing collection to database...")
     write_collection(f, "database", dbdir = dbdir)
     message(sprintf("updated database %s", dbdir))
   }
