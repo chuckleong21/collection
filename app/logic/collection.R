@@ -1,6 +1,6 @@
 box::use(
   cli[combine_ansi_styles, style_italic],
-  purrr[map, map_vec, list_rbind, map2, iwalk, walk2],
+  purrr[map, map_vec, list_rbind, map2, iwalk, walk2, set_names],
   duckdb[duckdb], 
   DBI[dbConnect, dbDisconnect, dbWriteTable],
   dplyr[tbl, collect, select, filter, case_when, mutate],
