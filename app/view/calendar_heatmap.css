@@ -1,0 +1,38 @@
+.calendar_view .cards,
+.day,
+.month,
+svg {
+    background-repeat: no-repeat;
+    box-sizing: border-box;
+    animation-delay: 0s;
+    animation-duration: 0s;
+    animation-iteration-count: 1;
+    background-attachment: scroll;
+    scroll-behavior: auto;
+    transition-delay: 0s;
+    transition-duration: 0s;
+    list-style: none
+}
+
+svg {
+    vertical-align: middle;
+    fill: rgb(55, 60, 68);
+    overflow: hidden;
+    height: 108px
+}
+
+.calendar_view .cards {
+    overflow-x: scroll;
+    padding: 8px 0;
+    column-gap: 16px;
+    display: grid;
+    grid-auto-columns: calc(20% - 16px);
+    grid-auto-flow: column;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: rgb(191, 199, 217) rgb(223, 227, 235)
+}
+
+.month {
+    font-size: 12px;
+    font-variant: small-caps
+}
