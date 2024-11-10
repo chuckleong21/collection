@@ -1,5 +1,4 @@
 box::use(
-  furrr[future_map, future_pmap_chr, furrr_options],
   stringr[str_detect, str_split, str_replace, str_which],
   rvest[read_html, html_element, html_text2, html_attr],
   blogdown[read_toml], 
@@ -8,7 +7,6 @@ box::use(
   assertthat[assert_that], 
   dplyr[tbl, select, mutate, collect, left_join]
 )
-
 #' @export
 fill <- function(x, ...) {
   UseMethod("fill")
