@@ -1,5 +1,5 @@
 box::use(
-  app/logic/read_import[...]
+  app/logic/import[...]
 )
 
 test_that("read_import expects a xlsx file", {
@@ -7,7 +7,7 @@ test_that("read_import expects a xlsx file", {
 })
 
 test_that("read_import returns a tibble", {
-  imports <- suppressWarnings(read_import("豆伴(58485907).xlsx"))
-  expect_s3_class(imports, c("tbl_df", "data.frame"))
+  imports <- suppressWarnings(from_import("豆伴(58485907).xlsx"))
+  expect_s3_class(imports, c("collection"))
 })
 
