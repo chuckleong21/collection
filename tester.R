@@ -3,9 +3,7 @@ box::use(
 )
 
 newdb <- import_to_database("app/static/豆伴(58485907)_2.xlsx")
-x <- newdb$data$book[1, ]
-require(ggplot2)
-
+movie <- newdb$data$movie
 
 makeRecord <- function(x) {
   div_pic <- function(x) {
@@ -135,9 +133,12 @@ makeRecord <- function(x) {
       }
     }
     li_starring <- function(starring) {
-      starring <- stringr::str_split(starring, pattern = "\\s", simplify = TRUE)|> 
-        stringr::str_c(collapse = " / ")
-      tags$li(class = "intro", sprintf("主演: %s", starring))
+      if(!is.na(x$starring)) {
+        starring <- stringr::str_split(starring, pattern = "\\s", simplify = TRUE)|> 
+          stringr::str_c(collapse = " / ")
+        tags$li(class = "intro", sprintf("主演: %s", starring))
+        
+      }
     }
     div(
       class = "info",
@@ -145,9 +146,11 @@ makeRecord <- function(x) {
           tags$a(href = x$url, style = "padding:5px;", x$title)),
       tags$ul(
         if(identical(x$type, "movie")) {
-          li_meta(type = x$type, year = x$year, region = x$region, genre = x$genre)
-          li_director(x$director)
-          li_starring(x$starring)
+          tagList(
+            li_meta(type = x$type, year = x$year, region = x$region, genre = x$genre),
+            li_director(x$director),
+            li_starring(x$starring)
+          )
         } else if(identical(x$type, "book")) {
           li_meta(type = x$type, author = x$author, publisher = x$publisher, year = x$year)
         } else if(identical(x$type, "music")) {
@@ -162,5 +165,6 @@ makeRecord <- function(x) {
   div(class = "item comment-item", div_pic(x), div_info(x))
 }
 
-records <- purrr::map(seq_len(nrow(newdb$data$game)), \(i) makeRecord(newdb$data$game[i,]))
-htmltools::browsable(records[[10]])
+records <- purrr::map(seq_len(nrow(newdb$data$movie)), \(i) makeRecord(newdb$data$movie[i,]))
+htmltools::browsable(records[[11]])
+htmltools::browsable(makeRecord(movie[539, ]))
