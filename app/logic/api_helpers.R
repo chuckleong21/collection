@@ -47,7 +47,7 @@ fetch_douban_movie <- function(x, xpath) {
       str_extract("^主演:\\s?(.+)", group = 1) |>
       str_remove_all("/ ") |> 
       str_split("\\s") |>
-      reduce(c) |>
+      reduce(c, .init = NA_character_) |>
       head(2) |>
       str_c(collapse = " ")
     return(list(region = region, genre = genre, 
