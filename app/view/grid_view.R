@@ -11,45 +11,51 @@ box::use(
   shiny[tags, tagList, div]
 )
 
-makeRating <- function(x) {
-  png_path <- glue("app/static/cover/rating/{x$type}/{x$subject_id}.png")
-  if(!sprintf("%s.png", x$subject_id) %in% list.files(sprintf("app/static/cover/rating/%s", x$type))) {
-    x <- complete(x, fill = list(my_rating = 0))
-    if(identical(x$type, "movie")) {
-      cols <- colorRampPalette(c("#fdffff", "#0ea5b5"))(100)
-    } else if(identical(x$type, "book")) {
-      cols <- colorRampPalette(c("#fdffff", "#327f3d"))(100)
-    } else if(identical(x$type, "music")) {
-      cols <- colorRampPalette(c("#fdffff", "#e84d18"))(100)
-    } else {
-      cols <- colorRampPalette(c("#fdffff", "#f89f19"))(100)
-    }
-    ring <- tibble(
-      percent = c(1-x$rating/10, x$rating/10), 
-      mark = x$my_rating * 2,
-      ymax = cumsum(percent), 
-      ymin = c(0, head(ymax, n = -1)),
-      color = c(cols[1], cols[x$rating*10])
-    )
-    p <- ggplot(
-      ring, aes(ymax = ymax, ymin = ymin, 
-                xmin = 3, xmax = 4, fill = I(color))
-    ) + 
-      geom_rect(show.legend = FALSE) + 
-      geom_text(aes(x = -5, y = 0, label = x$rating), size = 10) +
-      coord_polar(theta = "y") + 
-      xlim(c(-6, 4.5)) + 
-      theme_void() + 
-      ggsave(png_path, p, width = 197, units = "px",dpi = "print")
+gauge_path <- function(..., width = 150, height = 150, stroke = 6, animate) {
+  list2env(..., environment())
+  if(identical(type, "movie")) {
+    cols <- colorRampPalette(c("#fdffff", "#0ea5b5"))(100)
+  } else if(identical(type, "book")) {
+    cols <- colorRampPalette(c("#fdffff", "#327f3d"))(100)
+  } else if(identical(type, "music")) {
+    cols <- colorRampPalette(c("#fdffff", "#e84d18"))(100)
+  } else {
+    cols <- colorRampPalette(c("#fdffff", "#f89f19"))(100)
   }
-  png_path
+  
+  class <- sprintf("path-%s", subject_id)
+  dash <- sprintf("dash-%s", subject_id)
+  radius <- width / 2 - 5; circumference <- 2 * 3.14 * radius
+  center_x <- center_y <- width / 2
+  dasharray <- (width / 2 - 5) * 2 * 3.14
+  dashoffset <- ifelse(animate, dasharray, (1-rating/10) * circumference) 
+  tags$svg(
+    width = as.character(width), height = as.character(height), 
+    if(animate) {
+      tags$style(
+        sprintf(
+          '.%s {animation: 2s %s linear forwards}
+        @keyframes %s {to {stroke-dashoffset: %g;}}',
+          class, dash, dash, (1 - rating/10) * circumference
+        )
+      )
+    },
+    tags$circle(r = as.character(radius), 
+                cx = as.character(center_x), 
+                cy = as.character(center_y), 
+                class = class, 
+                style = sprintf("fill:none; stroke:%s; stroke-width:%g; stroke-dasharray:%g; stroke-dashoffset:%g;",
+                                cols[rating * 10], stroke, dasharray, dashoffset)
+    ),
+    tags$text(x = "40", y = "90", style = "font-size:xxx-large;", sprintf("%.1f", rating))
+  )
 }
-img_cover <- function(cover, alt) {
-  out <- sprintf("app/static/cover/%s/%s", x$type, str_replace(basename(cover), "^.+\\.", paste0(x$subject_id, ".")))
-  if(!str_replace(basename(cover), "^.+\\.", paste0(x$subject_id, ".")) %in% list.files(sprintf("app/static/cover/%s", x$type))) {
+img_cover <- function(x) {
+  out <- sprintf("static/cover/%s/%s", x$type, str_replace(basename(x$cover), "^.+\\.", paste0(x$subject_id, ".")))
+  if(!str_replace(basename(x$cover), "^.+\\.", paste0(x$subject_id, ".")) %in% list.files(sprintf("app/static/cover/%s", x$type))) {
     download_file(url = cover, mode = "wb", output = out)
   }
-  tags$img(src = out, alt = alt, width = "110%")
+  tags$img(src = out, alt = x$title, width = "110%")
 }
 span_badge <- function(status) {
       badge_col <- switch(
@@ -71,9 +77,9 @@ span_badge <- function(status) {
                              badge_col)
       tags$span(style = badge_style, status)
     }
-li_meta <- function(type, ...) {
+li_meta <- function(...) {
   zz <- list(...)
-  if(identical(type, "movie")) {
+  if(identical(zz$type, "movie")) {
     if(!is.na(zz$year) | !is.na(zz$region) | !is.na(zz$genre)) {
       region <- str_split(zz$region, "\\s", simplify = TRUE) |>
         str_c(collapse = " / ")
@@ -118,31 +124,29 @@ li_meta <- function(type, ...) {
     }
   } else stop("invalid type", call. = FALSE)
 }
-li_director <- function(director) {
+li_director <- function(x) {
   if(!is.na(x$director)) {
-    director <- str_split(director, pattern = "\\s", simplify = TRUE)|> 
+    director <- str_split(x$director, pattern = "\\s", simplify = TRUE)|> 
       str_c(collapse = " / ")
     tags$li(class = "intro", sprintf("导演: %s", director))
   }
 }
-li_starring <- function(starring) {
+li_starring <- function(x) {
   if(!is.na(x$starring)) {
-    starring <- str_split(starring, pattern = "\\s", simplify = TRUE)|> 
+    starring <- str_split(x$starring, pattern = "\\s", simplify = TRUE)|> 
       str_c(collapse = " / ")
     tags$li(class = "intro", sprintf("主演: %s", starring))
-    
   }
 }
 
-#' @export
 makeRecord <- function(x) {
   div_pic <- function(x) {
     div(
       class = "pic",
       tags$a(title = x$title, href = x$url, 
-        img_cover(cover = x$cover, alt = x$title)
+        img_cover(x)
       ),
-      tags$img(src = makeRating(x), alt="rating")
+      gauge_path(x, animate = TRUE)
     )
   }
   
@@ -155,8 +159,8 @@ makeRecord <- function(x) {
         if(identical(x$type, "movie")) {
           tagList(
             li_meta(type = x$type, year = x$year, region = x$region, genre = x$genre),
-            li_director(x$director),
-            li_starring(x$starring)
+            li_director(x),
+            li_starring(x)
           )
         } else if(identical(x$type, "book")) {
           li_meta(type = x$type, author = x$author, publisher = x$publisher, year = x$year)
@@ -170,4 +174,11 @@ makeRecord <- function(x) {
     )
   }
   div(class = "item comment-item", div_pic(x), div_info(x))
+}
+
+#' @export
+grid_view <- function(x) {
+    tagList(
+      purrr::map(seq_len(nrow(x)), \(i) makeRecord(x[i, ]))
+    )
 }
