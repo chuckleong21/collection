@@ -6,126 +6,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        .info,
-        .pic {
-            display: table-cell;
-            float: none;
-            vertical-align: top;
-            font: 400 13px/21.06px Helvetica, Arial, sans-serif
-        }
-
-        .info,
-        .item.comment-item,
-        .pic,
-        img,
-        li,
-        li.intro,
-        ul {
-            font: 400 13px/21.06px Helvetica, Arial, sans-serif
-        }
-
-        .badge,
-        img {
-            color: #fff
-        }
-
-        .item.comment-item {
+        .item {
             display: table;
             overflow: visible;
+            border-collapse: separate;
             width: 675px;
             zoom: 1;
-            margin: 0 0 20px;
-            padding: 0 0 5px;
-            word-break: break-word
+            margin: 0px 0px 20px;
+            padding: 0px 0px 5px;
+            word-break: break-word;
         }
 
+        .pic,
+        svg,
+        .info {
+            display: table-cell;
+            float: left;
+            vertical-align: top;
+        }
+        svg {
+            z-index: 1;
+        }
         .pic {
-            margin: 0 -1300px 0 0
+            margin: 0px -1300px 0px 0px;
         }
 
-        li.intro {
-            margin: 0 -5px 6px;
+        .pic img {
+            width: 140px;
+            height: 180px;
+        }
+        .info {
+            width: 180px;
+            margin: 0px 150px;
+        }
+        .title {
+            background: none 0% 0% / auto repeat scroll padding-box border-box rgb(242, 244, 246);
             clear: both;
-            list-style: none
+            margin: 0px 0px 6px;
+            padding: 3px 5px 1px;
+            width: 300px;
+            height:28px;
         }
 
-        img {
-            max-width: 150%;
-            vertical-align: middle;
-            cursor: pointer;
-            text-decoration-color: rgb(255, 255, 255);
-            text-decoration-style: solid;
-            text-decoration-thickness: auto;
-            background: rgba(0, 0, 0, 0)
+        .intro, .date {
+            clear: both;
+            display: flow-root;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0px -40px 6px;
+            list-style: outside none none;
+            line-height: 32px;
         }
 
         ul {
-            margin: 0 0 0 13px;
-            list-style: none
-        }
-
-        .title {
-            background: #f2f4f6;
-            padding: 3px 55px 1px;
-            font: 400 14px/22.68px Helvetica, Arial, sans-serif
-        }
-
-        li.intro {
-            display: flow-root;
-            overflow: hidden;
-            text-overflow: ellipsis
-        }
-
-        li {
-            clear: both;
-            list-style: none
-        }
-
-        .badge {
-            background-color: red;
-            padding: 4px 8px;
-            text-align: center;
-            border-radius: 5px
-        }
-        .date {
-            width: 104px;
+            margin: 0px 0px 0px 1px;
             list-style: outside none none;
-            color: rgb(187, 187, 187);
         }
     </style>
 </head>
 
 <body>
     <div class="grid-view">
-
-
-        <div class="item comment-item" data-cid="4028434128">
+        <div class="item">
             <div class="pic">
-                <a title="転生したらスライムだった件 第3期" href="https://movie.douban.com/subject/36152618/">
-                    <img alt="転生したらスライムだった件 第3期" src="../static/cover/p2902064528.webp" width="110%">
+                <a title="机器人总动员" href="https://movie.douban.com/subject/2131459/">
+                    <img src="../static/cover/movie/2131459.webp" alt="机器人总动员" width="50%">
                 </a>
-                <img src="../static/cover/Rplot.png" alt="rating" width="100%">
             </div>
-            <div class=" info">
-                    <div class="title">
-                        <span class="badge">Watched</span>
-                        <a href="https://movie.douban.com/subject/36152618/" style = "padding:5px;">
-                            关于我转生变成史莱姆这档事 第三季 / 転生したらスライムだった件 第3期
-                            / That Time I Got Reincarnated as a Slime Season 3
-                        </a>
-                    </div>
-                    <ul>
-                        <li class="intro">2024-04-05(日本) / 冈咲美保 / 丰口惠美 / 前野智昭 / 古川慎 / 千本木彩花 / 市道真央 / 江口拓也 / 大塚芳忠 / 山本兼平
-                            /
-                            泊明日菜 / 小林亲弘 / 山口太郎 / 福岛润 / 田中理惠 / 日高里菜 / 春野杏 / 樱井孝宏 / 沼仓爱美 / 浪川大辅 / 小野大辅 / 水濑祈 / 野岛健儿 / 竹本英史
-                            /
-                            饭岛肇 / 相川遥花 / 驹田航 / 村田太志 / 千叶翔也 / 日野麻里 / 山根雅史 / 日本 / 中山敦史 / 24分钟 / 关于我转生变成史莱姆这档事 第三季 / 动画 /
-                            奇幻 /
-                            冒险 / 根元岁三 Nemoto Toshizou / 日语</li>
-                        <li>
-                            <span class="date">记录于2024-10-02</span>
-                        </li>
+            <div class="info">
+                <div class="title">
+                    <span
+                    style="background-color:#0ea5b5;padding:4px 8px;list-style:outside none none;text-align:center;border-radius:5px;">看过</span>
+                    <a href="https://movie.douban.com/subject/2131459/" style="padding:5px;">机器人总动员</a>
+                </div>
+                <ul>
+                    <li class="intro">2008 / 美国 / 科幻 动画 冒险</li>
+                    <li class="intro">导演: 安德鲁·斯坦顿</li>
+                    <li class="intro">主演: 本·贝尔特 / 艾丽莎·奈特</li>
+                    <li class="date">记录于2012-07-09</li>
+                </ul>
             </div>
+            <svg width="150" height="150" class="rating">
+                <style>
+                    .path {animation: 2.5s dash linear forwards}
+                    @keyframes dash  {
+                        to {stroke-dashoffset: 70.336;}
+                    }
+                </style>
+                <circle r="70" cx="75" cy="75" class = "path"
+                    style="fill:none; stroke:#0ea5b5; stroke-width:6; stroke-dasharray:439.6; stroke-dashoffset:439.6;">
+                </circle>
+                <text x="40" y="90" style="font-size:xxx-large;">8.4</text>
+            </svg>
         </div>
 </body>
 
