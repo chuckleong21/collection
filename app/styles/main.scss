@@ -1,81 +1,65 @@
     * {
         font: 400 13px/21.06px Helvetica, Arial, sans-serif
     }
+        .item {
+            display: table;
+            overflow: visible;
+            border-collapse: separate;
+            width: 675px;
+            zoom: 1;
+            margin: 0px 0px 20px;
+            padding: 0px 0px 5px;
+            word-break: break-word;
+        }
 
-    .info,
-    .pic {
-        display: table-cell;
-        float: none;
-        vertical-align: top;
-        font: 400 13px/21.06px Helvetica, Arial, sans-serif
-    }
+        .pic,
+        svg,
+        .info {
+            display: table-cell;
+            float: left;
+            vertical-align: top;
+        }
+        svg {
+            z-index: 1;
+        }
+        .pic {
+            margin: 0px -1300px 0px 0px;
+        }
 
-    .badge,
-    img {
-        color: #fff
-    }
+        .pic img {
+            width: 140px;
+            height: 180px;
+        }
+        .info {
+            width: 180px;
+            margin: 0px 150px;
+        }
+        .title {
+            background: none 0% 0% / auto repeat scroll padding-box border-box rgb(242, 244, 246);
+            clear: both;
+            margin: 0px 0px 6px;
+            padding: 3px 5px 1px;
+            width: 300px;
+            height:28px;
+        }
 
-    .item.comment-item {
-        display: table;
-        overflow: visible;
-        width: 675px;
-        zoom: 1;
-        margin: 0 0 20px;
-        padding: 0 0 5px;
-        word-break: break-word
-    }
+        .intro, .date {
+            clear: both;
+            display: flow-root;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0px -40px 6px;
+            list-style: outside none none;
+            line-height: 32px;
+        }
 
-    .pic {
-        margin: 0 -1300px 0 0
-    }
-
-    li.intro {
-        margin: 0 -5px 6px;
-        clear: both;
-        list-style: none
-    }
-
-    img {
-        max-width: 150%;
-        vertical-align: middle;
-        cursor: pointer;
-        text-decoration-color: rgb(255, 255, 255);
-        text-decoration-style: solid;
-        text-decoration-thickness: auto;
-        background: rgba(0, 0, 0, 0)
-    }
-
-    ul {
-        margin: 0 0 0 13px;
-        list-style: none
-    }
-
-    .title {
-        background: #f2f4f6;
-        padding: 3px 55px 1px;
-        font: 400 14px/22.68px Helvetica, Arial, sans-serif
-    }
-
-    li.intro {
-        display: flow-root;
-        overflow: hidden;
-        text-overflow: ellipsis
-    }
-
-    li {
-        clear: both;
-        list-style: none
-    }
-
-    .badge {
-        background-color: red;
-        padding: 4px 8px;
-        text-align: center;
-        border-radius: 5px
-    }
+        ul {
+            margin: 0px 0px 0px 1px;
+            list-style: outside none none;
+        }
 
     .date {
-        width: 104px;
+        width: 110px;
         list-style: outside none none;
         color: rgb(187, 187, 187);
     }
