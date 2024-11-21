@@ -6,7 +6,14 @@ box::use(
   app/view/grid_view[grid_view]
 )
 
-newdb <- import_to_database("app/static/豆伴(58485907)_2.xlsx")
+new_collection <- collection("database")
+newdb$data$movie[377, ]$starring <- newdb$data$movie[377, ]$director
+newdb$data$movie[377, ]$director <- newdb$data$movie[377, ]$genre
+newdb$data$movie[377, ]$genre <- NA_character_
+
+newdb$data$movie[251, ]$starring <- newdb$data$movie[251, ]$director
+newdb$data$movie[251, ]$director <- newdb$data$movie[251, ]$genre
+newdb$data$movie[251, ]$genre <- NA_character_
 movie <- newdb$data$movie
 
 r <- movie[sample(seq_len(nrow(movie)), 1), ]
