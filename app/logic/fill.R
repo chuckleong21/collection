@@ -62,7 +62,7 @@ fill_collection_tbl <- function(x, y) {
 }
 
 
-fill.collection <- function(collection, from = NULL, workers = 2) {
+fill.collection <- function(collection, from = NULL) {
   on.exit({dbDisconnect(con)}, add = TRUE)
   dbpath <- "app/static/requests.duckdb"
   if(is.null(from)) {
