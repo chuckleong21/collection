@@ -1,108 +1,91 @@
 box::use(
+  assertthat[assert_that, `on_failure<-`], 
+  countrycode[countrycode],
+  dplyr[mutate, group_by, ungroup, slice_sample, 
+        slice, pull, transmute, cur_group_id],
   grDevices[colorRampPalette], 
-  shiny[tags],
-  stringr[str_replace, str_c, str_split],
+  httr2[request, req_perform, resp_body_html],
+  lubridate[as_date],
+  polyglotr[google_translate],
+  purrr[map, reduce, map_vec, set_names],
+  rvest[html_elements, html_text2],
+  shiny[tags, tagList, div],
+  stats[na.omit],
+  stringr[str_replace, str_c, str_split, str_which, str_replace_all],
+  tibble[enframe, tibble],
+  tidyr[unnest, separate],
   xfun[download_file],
-  lubridate[as_date]
 )
+
+box::use(app/logic/collection[collection])
 
 #' Generate random R colors
 #' 
 #' @section Details:
-#' The function returns color hex codes from \href{} 
+#' The function returns color hex codes by scraping 
+#' \href{https://r-charts.com/colors/} {R-colors}. The website groups
+#' the color tone nicely and each group has 5 color accents.
 #' 
-#' 
-#' @param ... dots argument reserved for classes
-#' @inheritParams random_r_colors.numeric
-#' @inheritParams random_r_colors.character 
+#' @param x An integer. The number of colors to generate,\cr A character vector.
+#' @param accent An integer. The color accent to use
+#' @param ... other arguments
 #'
 #' @return A character vector of hex color codes
 #' @export
 #' 
-#' @seealso [random_r_colors.numeric()], [random_r_colors.character()]
-#'
 #' @examples
 #' random_r_colors(3, accent = 3)
 #' random_r_colors(letters[1:5], accent = 2)
-random_r_colors <- function(...) {
+#' 
+random_r_colors <- function(x, accent, include.na) {
   UseMethod("random_r_colors")
 }
 
-#' Generate Random R Colors
-#'
-#' @param n An integer. The number of colors to generate
-#' @param accent An integer. The color accent to use
-#'
-#' @return A character vector of hex color codes
-#' @export
-random_r_colors.numeric <- function(n, accent) {
-  is_scalar_integer <- function(x) is.integer(x) & length(x) == 1
-  assertthat::on_failure(is_scalar_integer) <- function(call, env) paste0(deparse(call$x), " is not a scalar")
-  assertthat::assert_that(is_scalar_integer(n), !is.na(n))
-  assertthat::assert_that(is_scalar_integer(accent), accent %in% 1:5)
-  response <- httr2::request("https://r-charts.com/colors/") |> 
-    httr2::req_perform() |>
-    httr2::resp_body_html()
+random_r_colors.default <- function(x, accent, include.na = TRUE) {
+  response <- request("https://r-charts.com/colors/") |> 
+    req_perform() |>
+    resp_body_html()
   
   colors_tbl <- response |> 
-    rvest::html_elements(xpath = '//*[@id="top"]/section[4]/div/div[3]/div') |>
-    purrr::map(\(x) {
-      e <- rvest::html_elements(x, "#clipboardItem p") |>
-        rvest::html_text2()
-      stringr::str_c(e[seq(1, length(e), 2)], e[seq(2, length(e), 2)], sep = ":")
+    html_elements(xpath = '//*[@id="top"]/section[4]/div/div[3]/div') |>
+    map(\(x) {
+      e <- html_elements(x, "#clipboardItem p") |>
+        html_text2()
+      str_c(e[seq(1, length(e), 2)], e[seq(2, length(e), 2)], sep = ":")
     }) |>
-    tibble::enframe(name = "id") |>
-    tidyr::unnest(value) |>
-    tidyr::separate(value, c("name", "code"), ":")
+    enframe(name = "id") |>
+    unnest(value) |>
+    separate(value, c("name", "code"), ":") |> 
+    group_by(id) |>
+    slice(accent) |>
+    ungroup()
+  is_scalar_numeric <- function(x) is.numeric(x) & length(x) == 1
+  on_failure(is_scalar_numeric) <- function(call, env) paste0(deparse(call$x), " is not a scalar")
+  assert_that(is_scalar_numeric(accent), accent %in% 1:5)
   
-  colors_tbl |>
-    dplyr::group_by(id) |>
-    dplyr::slice(accent) |>
-    dplyr::ungroup() |>
-    dplyr::slice_sample(n = n) |>
-    dplyr::pull(code)
-} 
-#' Generate Random R Colors
-#'
-#' @param x A character vector
-#' @param accent An integer. The color accent to use
-#' @param include.na Should a color hex code be assigned to NA values?
-#'
-#' @return A character vector of hex color codes
-#' @export
-random_r_colors.character <- function(x, accent, include.na) {
-  if(any(is.na(x))) {
-    if(!include.na) {
-      warning(sprintf("remove %g NA value(s)", length(which(is.na(x)))))
-      x <- na.omit(x)
-    } else x
+  if(inherits(x, "numeric")) {
+    assert_that(is_scalar_numeric(x), !is.na(x))
+  } else if(inherits(x, "character")) {
+    if(any(is.na(x))) {
+      if(!include.na) {
+        warning(sprintf("remove %g NA value(s)", length(which(is.na(x)))))
+        x <- na.omit(x)
+      } else x
+    }
+    x <- length(x)
+  } else {
+    x <- as.character(x)
+    if(any(is.na(x))) {
+      if(!include.na) {
+        warning(sprintf("remove %g NA value(s)", length(which(is.na(x)))))
+        x <- na.omit(x)
+      } else x
+    }
+    x <- length(x)
   }
-  n <- length(x)
-  response <- httr2::request("https://r-charts.com/colors/") |> 
-    httr2::req_perform() |>
-    httr2::resp_body_html()
-  
-  colors_tbl <- response |> 
-    rvest::html_elements(xpath = '//*[@id="top"]/section[4]/div/div[3]/div') |>
-    purrr::map(\(x) {
-      e <- rvest::html_elements(x, "#clipboardItem p") |>
-        rvest::html_text2()
-      stringr::str_c(e[seq(1, length(e), 2)], e[seq(2, length(e), 2)], sep = ":")
-    }) |>
-    tibble::enframe(name = "id") |>
-    tidyr::unnest(value) |>
-    tidyr::separate(value, c("name", "code"), ":")
-  
   colors_tbl |>
-    dplyr::group_by(id) |>
-    dplyr::slice(accent) |>
-    dplyr::ungroup() |>
-    dplyr::slice_sample(n = n) |>
-    dplyr::pull(code)
-}
-random_r_colors.default <- function(x, ...) {
-  x <- as.character(x)
-  random_dark_colors(x, ...)
+    slice_sample(n = x) |>
+    pull(code)
 }
 
 #' Draw Gauges
@@ -137,8 +120,8 @@ random_r_colors.default <- function(x, ...) {
 gauge_path <- function(..., width = 150, height = 150, stroke = 6, animate = TRUE) {
   list2env(..., environment())
   is_scalar_numeric <- function(x) is.numeric(x) & length(x) == 1
-  assertthat::on_failure(is_scalar_numeric) <- function(call, env) paste0(deparse(call$x), " is not a scalar numeric")
-  assertthat::assert_that(is_scalar_numeric(stroke), is_scalar_numeric(width), is_scalar_numeric(height)) 
+  on_failure(is_scalar_numeric) <- function(call, env) paste0(deparse(call$x), " is not a scalar numeric")
+  assert_that(is_scalar_numeric(stroke), is_scalar_numeric(width), is_scalar_numeric(height)) 
   if(identical(type, "movie")) {
     cols <- colorRampPalette(c("#fdffff", "#0ea5b5"))(100)
   } else if(identical(type, "book")) {
@@ -232,75 +215,77 @@ span_status <- function(...) {
   list2env(..., environment())
   badge_col <- switch(
     as.character(status), 
-    "想看" = "#90edf6",
-    "在看" = "#23dbee", 
-    "看过" = "#0ea5b5",
-    "想读" = "#8fd399", 
-    "在读" = "#65c272", 
-    "读过" = "#327f3d", 
-    "想听" = "#f19171", 
-    "在听" = "#ed764d", 
-    "听过" = "#e84d18", 
-    "想玩" = "#fbcf8b", 
-    "在玩" = "#f9af3f", 
-    "玩过" = "#f89f19", 
+    "想看" = "#90edf6", "在看" = "#23dbee", "看过" = "#0ea5b5",
+    "想读" = "#8fd399", "在读" = "#65c272", "读过" = "#327f3d", 
+    "想听" = "#f19171", "在听" = "#ed764d", "听过" = "#e84d18", 
+    "想玩" = "#fbcf8b", "在玩" = "#f9af3f", "玩过" = "#f89f19"
   )
   badge_style <- sprintf("background-color:%s;padding:4px 8px;list-style:outside none none;text-align:center;border-radius:5px;",
                          badge_col)
   tags$span(style = badge_style, status)
 }
+region_tbl <- function() {
+  tibble(
+    country.name.cn = collection("database")$data$movie$region |> 
+      str_split("\\s") |> 
+      reduce(c) |> 
+      unique() |> 
+      na.omit() |>
+      str_c(collapse = "|"),
+    country.name.en = google_translate(country.name.cn, "en", "zh-CN")) |>
+    mutate(country.name.cn = str_split(country.name.cn, "\\|"),
+                  country.name.en = str_split(country.name.en, "\\|")) |>
+    unnest(c(country.name.cn, country.name.en)) |>
+    mutate(
+      continent.en = countrycode(country.name.en, "country.name.en", "continent"),
+      continent.cn = map_vec(continent.en, \(x) google_translate(x, "zh-CN", "en"), .progress = TRUE),
+      country_id = tolower(countrycode(country.name.en, "country.name.en", "iso2c"))
+    ) |>
+    transmute(
+      continent = continent.cn, 
+      country = country.name.cn,
+      continent_id = tolower(continent.en),
+      country_id = country_id
+    ) |>
+    group_by(continent) |>
+    mutate(divider_id = cur_group_id())
+}
 span_region <- function(..., flag_size = c("small", "big")) {
   list2env(..., environment())
-  if(!exists("region_tbl", .GlobalEnv)) {
-    region_tbl <<- tibble::tibble(
-      chinese = new_collection$data$movie$region |> stringr::str_split("\\s") |> purrr::reduce(c) |> unique() |> na.omit(),
-      english = purrr::map_vec(chinese, \(x) polyglotr::google_translate(x, target_language = "en", source_language = "zh-CN"))
-    ) |>
-      dplyr::inner_join(
-        countrycode::codelist |>
-          dplyr::transmute(country.name.en, iso2c = tolower(iso2c)) |>
-          dplyr::mutate(country.name.en = dplyr::case_match(country.name.en, 
-                                                            "United Kingdom" ~ "U.K.",
-                                                            "United States" ~ "USA", 
-                                                            "Philippines" ~ "the Philippines",
-                                                            "Hong Kong SAR China" ~ "Hongkong", 
-                                                            "Czechia" ~ "Czech Republic",
-                                                            .default = country.name.en)),
-        by = c("english" = "country.name.en")
-      )
+  if(!exists("regions", .GlobalEnv)) {
+    regions <<- region_tbl()
   }
   flag_size <- match.arg(flag_size)
   flag_size <- switch(flag_size, "small" = "s", "big" = "b")
-  region <- stringr::str_split(region, "\\s") |> purrr::reduce(c)
-  shiny::tagList(
-    purrr::map(region, \(r) {
+  region <- str_split(region, "\\s") |> reduce(c)
+  tagList(
+    map(region, \(r) {
       if(!is.na(r)) {
-        shiny::tags$span(class = sprintf("fi fi-%s fi%s", 
-                                         region_tbl$iso2c[charmatch(r, region_tbl$chinese)], 
+        tags$span(class = sprintf("fi fi-%s fi%s", 
+                                         .GlobalEnv$regions$country_id[charmatch(r, .GlobalEnv$regions$country)], 
                                          flag_size))
       }
     })
   ) 
 }
-
 li_category <- function(..., class = "category") {
   list2env(..., environment())
   if(!exists("category_colors", envir = .GlobalEnv)) {
     category_colors <- collection("database")$data$game$category |> 
-      stringr::str_split("\\s") |>
-      purrr::reduce(c) |>
+      str_split("\\s") |>
+      reduce(c) |>
       unique() |>
       na.omit()
     category_colors <<- category_colors |> 
-      purrr::set_names(random_r_colors(category_colors, accent = 3))
+      set_names(random_r_colors(category_colors, accent = 3))
   }
-  category <- stringr::str_split(category, "\\s") |> purrr::reduce(c)
-  shiny::tags$li(
-    purrr::map(category, \(cat) {
+  category <- str_split(category, "\\s") |> reduce(c)
+  tags$li(
+    map(category, \(cat) {
       if(!is.na(cat)) {
         style <- sprintf('background-color:%s;color:#000;padding:4px 4px;text-align:center;border-radius:6px;', 
-                         names(category_colors[stringr::str_which(category_colors, cat)]))
-        shiny::tags$span(style = style, cat)
+                         names(.GlobalEnv$category_colors[str_which(.GlobalEnv$category_colors, cat)]))
+        tags$span(style = style, cat)
       }
     })
   )
@@ -308,84 +293,85 @@ li_category <- function(..., class = "category") {
 li_info <- function(..., class = "info") {
   list2env(..., environment())
   if(identical(type, "movie")) {
-    shiny::tagList(
+    tagList(
       if(!is.na(director)) {
-        shiny::tags$li(class = class, sprintf("导演: %s", stringr::str_replace_all(director, "\\s", " / ")))
+        tags$li(class = class, sprintf("导演: %s", str_replace_all(director, "\\s", " / ")))
       },
       if(!is.na(starring)) {
-        shiny::tags$li(class = class, sprintf("主演: %s", stringr::str_replace_all(starring, "\\s", " / ")))
+        tags$li(class = class, sprintf("主演: %s", str_replace_all(starring, "\\s", " / ")))
       }
     )
   } else if(identical(type, "music")) {
-    shiny::tagList(
+    tagList(
       if(!is.na(performer)) {
-        shiny::tags$li(class = class, sprintf("演奏者: %s", performer))
+        tags$li(class = class, sprintf("演奏者: %s", performer))
       },
       if(!is.na(year)) {
-        shiny::tags$li(class = class, sprintf("年份: %s", year))
+        tags$li(class = class, sprintf("年份: %s", year))
       }
     )
   } else if(identical(type, "book")) {
-    shiny::tagList(
+    tagList(
       if(!is.na(author)) {
-        shiny::tags$li(class = class, sprintf("作者: %s", author))
+        tags$li(class = class, sprintf("作者: %s", author))
       }, 
       if(!is.na(publisher)) {
-        shiny::tags$li(class = class, sprintf("出版社: %s", publisher))
+        tags$li(class = class, sprintf("出版社: %s", publisher))
       }
     )
   } else if(identical(type, "game")) {
-    shiny::tagList(
+    tagList(
       if(!is.na(developer)) {
-        shiny::tags$li(class = class, sprintf("开发者: %s", developer))
+        tags$li(class = class, sprintf("开发者: %s", developer))
       },
       if(!is.na(release)) {
-        shiny::tags$li(class = class, sprintf("发行日期: %s", release))
+        tags$li(class = class, sprintf("发行日期: %s", release))
       }
     )
   } else stop("invalid type")
 }
 li_genre <- function(..., class = "info") {
   list2env(..., environment())
+  genre_all <- collection("database")$data$movie$genre |> 
+    str_split("\\s") |>
+    reduce(c) |>
+    unique()
   if(!exists("genre_colors", envir = .GlobalEnv)) {
-    genre_colors <- collection("database")$data$movie$genre |> 
-      stringr::str_split("\\s") |>
-      purrr::reduce(c) |>
-      unique() |>
+    genre_colors <<- genre_all |> 
+      set_names(random_r_colors(genre_all, accent = 5)) |>
       na.omit()
-    genre_colors <<- genre_colors |> 
-      purrr::set_names(random_r_colors(genre_colors, accent = 5))
   }
-  genre <- stringr::str_split(genre, "\\s") |> purrr::reduce(c)
-  shiny::tags$li(
-    purrr::map(genre, \(g) {
+  genre <- str_split(genre, "\\s") |> reduce(c)
+  tags$li(
+    map(genre, \(g) {
       if(!is.na(g)) {
         style <- sprintf('background-color:%s;color:#fff;padding:4px 4px;text-align:center;border-radius:6px;', 
-                         names(genre_colors[stringr::str_which(genre_colors, g)]))
-        shiny::tags$span(style = style, g)
+                         names(.GlobalEnv$genre_colors[str_which(.GlobalEnv$genre_colors, g)]))
+        tags$span(style = style, g)
       }
     })
   )
 }
 
-divs <- function(..., class) {
+#' @export
+divs <- function(..., class, flag_size = "big") {
   list2env(..., environment())
   switch(
     class, 
-    "title" = shiny::div(
+    "title" = div(
       class = class,
       span_status(...),
       if(type %in% c("movie", "book")) {
         title_year <- ifelse(is.na(year), title, paste(title, sprintf("(%g)", year)))
-        shiny::tags$a(href = url, title_year)
+        tags$a(href = url, title_year)
       } else {
-        shiny::tags$a(href = url, title)
+        tags$a(href = url, title)
       },
       if(identical(type, "movie")) {
-        span_region(...)
+        span_region(..., flag_size = flag_size)
       }
     ),
-    "meta" = shiny::div(
+    "meta" = div(
       class = class,
       img_cover(...),
       tags$ul(
@@ -395,7 +381,7 @@ divs <- function(..., class) {
           lis(..., class = "category")
         },
         lis(..., class = "info"),
-        tags$li(class = "date", paste0("记录于", lubridate::as_date(created_at)))
+        tags$li(class = "date", paste0("记录于", as_date(created_at)))
       )
     )
   )
@@ -410,17 +396,3 @@ lis <- function(..., class) {
 }
 
 
-
-# test functions ----------------------------------------------------------
-
-div_item <- function(..., class = "item") {
-  shiny::div(
-    class = class, 
-    gauge_path(...),
-    div(
-      class = "info",
-      divs(..., class = "title"),
-      divs(..., class = "meta")
-    )
-  )
-}
