@@ -8,7 +8,6 @@
 }
 
 .item {
-    border: #000000 solid 3px;
     display: flex;
     height: auto;
     width: 725px;
@@ -17,7 +16,6 @@
 }
 
 svg {
-    border: chartreuse solid 3px;
     margin: 30px 0px 3px 0px;
     padding-bottom: 10px;
 }
@@ -38,7 +36,6 @@ svg {
     padding-top: 10px;
     padding-bottom: 1.5rem;
     height: 20px;
-    border: rgb(133, 231, 222) solid 3px;
 }
 
 .title * {
@@ -47,7 +44,6 @@ svg {
 
 .title a {
     color: #3377aa;
-    font-family: copperplate;
     font-size: 1.2rem;
     text-decoration: none;
 }
@@ -60,7 +56,6 @@ svg {
 .meta {
     display: flex;
     gap: 1rem;
-    border: chocolate solid 3px;
 }
 
 .intro ul {
