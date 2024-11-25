@@ -224,6 +224,7 @@ span_status <- function(...) {
                          badge_col)
   tags$span(style = badge_style, status)
 }
+#' @export
 region_tbl <- function() {
   tibble(
     country.name.cn = collection("database")$data$movie$region |> 
@@ -250,6 +251,7 @@ region_tbl <- function() {
     group_by(continent) |>
     mutate(divider_id = cur_group_id())
 }
+
 span_region <- function(..., flag_size = c("small", "big")) {
   list2env(..., environment())
   if(!exists("regions", .GlobalEnv)) {

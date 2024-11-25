@@ -43,11 +43,7 @@ ui <- function(id) {
     unique()
   ns <- shiny::NS(id)
   fluentPage(
-    Dropdown.shinyInput(
-      ns("country"), value = "", label = "国家",
-      multiSelect = TRUE,
-      options = country_options(countries, ns)
-    ), 
+    region_dropdown("region", "Region"), 
     grid_view(movie)
     # gt::gt_output(ns("table"))
   )
