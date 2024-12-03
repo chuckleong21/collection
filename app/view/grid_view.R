@@ -15,7 +15,7 @@ div_item <- function(..., class = "item") {
     class = class, 
     gauge_path(...),
     div(
-      class = "info",
+      class = "intro",
       divs(..., class = "title"),
       divs(..., class = "meta")
     )
