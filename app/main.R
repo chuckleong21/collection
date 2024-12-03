@@ -5,8 +5,7 @@ box::use(
 )
 box::use(
   app/logic/import[import_to_database],
-  app/view/grid_view[grid_view],
-  app/view/filter_options[country_options]
+  app/view/grid_view[region_dropdown, grid_view],
 )
 
 # ui <- function(id) {
@@ -43,8 +42,8 @@ ui <- function(id) {
     unique()
   ns <- shiny::NS(id)
   fluentPage(
-    region_dropdown("region", "Region"), 
-    grid_view(movie)
+    region_dropdown("region", "Region", multiple = TRUE),
+    grid_view(utils::tail(movie, 20))
     # gt::gt_output(ns("table"))
   )
 }
