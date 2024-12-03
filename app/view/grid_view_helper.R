@@ -136,7 +136,7 @@ gauge_path <- function(..., width = 150, height = 150, stroke = 6, animate = TRU
   dash <- sprintf("dash-%s", subject_id)
   radius <- width / 2 - 5; circumference <- 2 * 3.14 * radius
   center_x <- center_y <- width / 2
-  dasharray <- (width / 2 - 5) * 2 * 3.14
+  dasharray <- ifelse(rating != 0, (width / 2 - 5) * 2 * 3.14, 0)
   dashoffset <- ifelse(animate, dasharray, (1-rating/10) * circumference) 
   tags$svg(
     width = as.character(width), height = as.character(height), 
@@ -154,7 +154,7 @@ gauge_path <- function(..., width = 150, height = 150, stroke = 6, animate = TRU
                 cy = as.character(center_y), 
                 class = class, 
                 style = sprintf("fill:none; stroke:%s; stroke-width:%g; stroke-dasharray:%g; stroke-dashoffset:%g;",
-                                cols[rating * 10], stroke, dasharray, dashoffset)
+                                ifelse(rating != 0, cols[rating * 10], "#bbb"), stroke, dasharray, dashoffset)
     ),
     tags$text(x = "40", y = "90", style = "font-size:xxx-large;", sprintf("%.1f", rating))
   )
@@ -239,7 +239,7 @@ region_tbl <- function() {
     unnest(c(country.name.cn, country.name.en)) |>
     mutate(
       continent.en = countrycode(country.name.en, "country.name.en", "continent"),
-      continent.cn = map_vec(continent.en, \(x) google_translate(x, "zh-CN", "en"), .progress = TRUE),
+      continent.cn = map_vec(continent.en, \(x) google_translate(x, "zh-CN", "en")),
       country_id = tolower(countrycode(country.name.en, "country.name.en", "iso2c"))
     ) |>
     transmute(
@@ -270,7 +270,7 @@ span_region <- function(..., flag_size = c("small", "big")) {
     })
   ) 
 }
-li_category <- function(..., class = "category") {
+li_category <- function(...) {
   list2env(..., environment())
   if(!exists("category_colors", envir = .GlobalEnv)) {
     category_colors <- collection("database")$data$game$category |> 
@@ -283,6 +283,7 @@ li_category <- function(..., class = "category") {
   }
   category <- str_split(category, "\\s") |> reduce(c)
   tags$li(
+    class = "info",
     map(category, \(cat) {
       if(!is.na(cat)) {
         style <- sprintf('background-color:%s;color:#000;padding:4px 4px;text-align:center;border-radius:6px;', 
@@ -332,7 +333,7 @@ li_info <- function(..., class = "info") {
     )
   } else stop("invalid type")
 }
-li_genre <- function(..., class = "info") {
+li_genre <- function(...) {
   list2env(..., environment())
   genre_all <- collection("database")$data$movie$genre |> 
     str_split("\\s") |>
@@ -345,6 +346,7 @@ li_genre <- function(..., class = "info") {
   }
   genre <- str_split(genre, "\\s") |> reduce(c)
   tags$li(
+    class = "info",
     map(genre, \(g) {
       if(!is.na(g)) {
         style <- sprintf('background-color:%s;color:#fff;padding:4px 4px;text-align:center;border-radius:6px;', 
