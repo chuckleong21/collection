@@ -335,11 +335,11 @@ li_info <- function(..., class = "info") {
 }
 li_genre <- function(...) {
   list2env(..., environment())
-  genre_all <- collection("database")$data$movie$genre |> 
-    str_split("\\s") |>
-    reduce(c) |>
-    unique()
   if(!exists("genre_colors", envir = .GlobalEnv)) {
+    genre_all <- collection("database")$data$movie$genre |> 
+      str_split("\\s") |>
+      reduce(c) |>
+      unique()
     genre_colors <<- genre_all |> 
       set_names(random_r_colors(genre_all, accent = 5)) |>
       na.omit()

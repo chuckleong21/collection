@@ -75,6 +75,24 @@ region_dropdown <- function(inputId, label, multiple, ...) {
 }
 
 #' @export
+genre_dropdown <- function(inputId, label, multiple, ...) {
+  dropdown_options <- function(inputId, label) {
+    list(key = inputId, text = label)
+  }
+  if(!exists("genre_colors", envir = .GlobalEnv)) {
+    genre_all <- collection("database")$data$movie$genre |> 
+      str_split("\\s") |>
+      reduce(c) |>
+      unique()
+    genre_colors <<- genre_all |> 
+      set_names(random_r_colors(genre_all, accent = 5)) |>
+      na.omit()
+  }
+  out <- purrr::map(genre_colors, \(x) dropdown_options(x, x)) |> unname()
+  Dropdown.shinyInput(inputId = inputId, label = label, multiSelect = multiple, options = out, ...)
+}
+
+#' @export
 grid_view <- function(x) {
     tagList(
       map(seq_len(nrow(x)), \(i) div_item(x[i, ]))
