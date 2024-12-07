@@ -22,7 +22,7 @@ div_item <- function(..., class = "item") {
   )
 }
 #' @export
-region_dropdown <- function(inputId, label, multiple) {
+region_dropdown <- function(inputId, label, multiple, ...) {
   DropdownMenuItemType <- function(type) {
     JS(paste0("jsmodule['@fluentui/react'].DropdownMenuItemType.", type))
   }
@@ -71,7 +71,7 @@ region_dropdown <- function(inputId, label, multiple) {
   out <- out[map_vec(out, \(x) !is.null(x))]
   Dropdown.shinyInput(inputId = inputId, label = label, 
                       multiSelect = multiple, 
-                      options = out)
+                      options = out, ...)
 }
 
 #' @export
