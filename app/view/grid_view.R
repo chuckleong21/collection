@@ -1,13 +1,18 @@
 box::use(
   shiny[div, tagList, NS],
-  purrr[map, map_vec, map2, list_flatten, pluck_depth],
+  purrr[map, map_vec, map2, list_flatten, reduce, 
+        set_names, pluck_depth],
   shiny.fluent[Dropdown.shinyInput],
   shiny.react[JS],
-  dplyr[group_by, group_split]
+  stringr[str_split],
+  dplyr[group_by, group_split], 
+  stats[na.omit]
 )
 
 box::use(
-  app/view/grid_view_helper[gauge_path, divs, region_tbl]
+  app/logic/collection[collection],
+  app/view/grid_view_helper[gauge_path, divs, 
+                            region_tbl, random_r_colors]
 )
 
 div_item <- function(..., class = "item") {
@@ -88,7 +93,7 @@ genre_dropdown <- function(inputId, label, multiple, ...) {
       set_names(random_r_colors(genre_all, accent = 5)) |>
       na.omit()
   }
-  out <- purrr::map(genre_colors, \(x) dropdown_options(x, x)) |> unname()
+  out <- map(genre_colors, \(x) dropdown_options(x, x)) |> unname()
   Dropdown.shinyInput(inputId = inputId, label = label, multiSelect = multiple, options = out, ...)
 }
 

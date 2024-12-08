@@ -5,7 +5,7 @@ box::use(
 )
 box::use(
   app/logic/import[import_to_database],
-  app/view/grid_view[region_dropdown, grid_view],
+  app/view/grid_view[region_dropdown, genre_dropdown, grid_view],
 )
 
 # ui <- function(id) {
