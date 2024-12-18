@@ -72,10 +72,10 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
     subText = subtitle
   )
   onDismiss <- JS(paste0(
-        "function() {",
-        "  Shiny.setInputValue('", ns(dismissId),"', Math.random());",
-        "}"
-      ))
+    "function() {",
+    "  Shiny.setInputValue('", ns(dismissId),"', Math.random());",
+    "}"
+  ))
   dismissId <- dismissId %||% "hideDialog"
   assertthat::assert_that(inherits(onDismiss, "JS_EVAL"), 
                           msg = "onDismiss is not a JavaScript Evaluation")
@@ -156,18 +156,19 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
         ), 
         div(
           class = "record-grid-item", 
-          div(style = list(display = "flex", gap = "0.5rem"),
-              Image(src = sprintf("static/cover/movie/%s.%s", subject_id, tools::file_ext(cover)),
-                    style = list(`max-width` = "100px")
-              ),
-              fileInput(inputId = ns("modalCover"), label = NULL, multiple = FALSE, accept = c(".webp", "png", "jpg"),
-                        placeholder = "Upload a cover...")
+          div(style = "display:flex;gap:1rem;",
+              Text(style = list(`font-weight` = "600", `font-size` = "14px"), "Cover"),
+              div(
+                uiOutput(ns("modalCover")),
+                ActionButton.shinyInput(inputId = ns("modalImgUpload"), iconProps = list(iconName = "Upload"), 
+                                        text = "Upload Cover...")
+              )
           )
         )
     ),
     DialogFooter(
-      PrimaryButton.shinyInput(ns("dialogSend"), text = footer_button[1]),
-      DefaultButton.shinyInput(ns("dialogDontSend"), text = footer_button[2])
+      PrimaryButton.shinyInput(ns("dialogUpdate"), text = footer_button[1]),
+      DefaultButton.shinyInput(ns("dialogCancel"), text = footer_button[2])
     )  
   )
 }
@@ -177,120 +178,29 @@ server <- function(id) {
     ns <- session$ns
     
     isDialogOpen <- reactiveVal(FALSE)
+    imgFile <- reactiveVal(NULL)
     output$reactDialog <- renderReact({
-      # dialogContentProps <- list(
-      #   type = 0,
-      #   title = "Missing Subject",
-      #   closeButtonAriaLabel = "Close",
-      #   subText = "Do you want to send this message without a subject?"
-      # )
-      # dropdown_options <- function(inputId, label) {
-      #   list(key = inputId, text = label)
-      # }
       movie_modal(record, 
                   ns = ns, 
                   type = 0, 
                   hidden = !isDialogOpen(), 
                   widths = c(500, 960))
-      # Dialog(
-      #   minWidth = 500, maxWidth = 960,
-      #   hidden = !isDialogOpen(),
-      #   onDismiss = JS(paste0(
-      #     "function() {",
-      #     "  Shiny.setInputValue('", ns("hideDialog"),"', Math.random());",
-      #     "}"
-      #   )),
-      #   dialogContentProps = dialogContentProps,
-      #   modalProps = list(),
-      #   div(class = "record-grid", 
-      #       div(
-      #         class = "record-grid-item",
-      #         TextField.shinyInput(inputId = ns("modalSubjectID"), ariaLabel = "SubjectID", label = "ID", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$subject_id, disabled = TRUE)
-      #       ),
-      #       div(
-      #         class = "record-grid-item",
-      #         TextField.shinyInput(inputId = ns("modalTitle"), ariaLabel = "Title", label = "Title", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$title)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         TextField.shinyInput(inputId = ns("modalYear"), ariaLabel = "Year", label = "Year", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$year)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         region_dropdown(ns("modalRegion"), label = "Region", multiple = TRUE, 
-      #                         value = reduce(str_split(record$region, "\\s"), c))
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         genre_dropdown(ns("modalGenre"), label = "Genre", multiple = TRUE, 
-      #                        value = reduce(str_split(record$genre, "\\s"), c))
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         TextField.shinyInput(inputId = ns("modalDirector"), ariaLabel = "Director", label = "Director",
-      #                              borderless = TRUE, underlined = TRUE, value = record$director)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         TextField.shinyInput(inputId = ns("modalStarring"), ariaLabel = "Starring", label = "Starring",
-      #                              borderless = TRUE, underlined = TRUE, value = record$starring)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         TextField.shinyInput(inputId = ns("modalSite"), ariaLabel = "Site", label = "Site", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$site)
-      #       ), 
-      #       div(
-      #         class = "record-grid-item", 
-      #         Dropdown.shinyInput(inputId = ns("modalStatus"), label = "Status", 
-      #                             options = purrr::map(c("想看", "在看", "看过"), \(x) dropdown_options(x, x)), 
-      #                             value = record$status)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", style = "padding-top:2.5rem;",
-      #         TextField.shinyInput(inputId = ns("modalRating"), ariaLabel = "Rating", label = "Rating", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$rating)
-      #       ), 
-      #       div(
-      #         class = "record-grid-item",
-      #         SpinButton.shinyInput(inputId = ns("modalMyrating"), ariaLabel = "Myrating", label = "My Rating", 
-      #                               min = 0, max = 5, step = 1, value = record$my_rating)
-      #       ),
-      #       div(
-      #         class = "record-grid-item",
-      #         TextField.shinyInput(inputId = ns("modalURL"), ariaLabel = "Url", label = "URL", 
-      #                              borderless = TRUE, underlined = TRUE, value = record$url, disabled = TRUE)
-      #       ),
-      #       div(
-      #         class = "record-grid-item", 
-      #         TextField.shinyInput(inputId = ns("modalCreatedAt"), ariaLabel = "CreatedAt", label = "Created At", 
-      #                              borderless = TRUE, underlined = TRUE, disabled = TRUE, value = as.character(record$created_at))
-      #       ), 
-      #       div(
-      #         class = "record-grid-item", 
-      #         div(style = list(display = "flex", gap = "0.5rem"),
-      #             Image(src = sprintf("static/cover/movie/%s.%s", record$subject_id, tools::file_ext(record$cover)),
-      #                   style = list(`max-width` = "100px")
-      #             ),
-      #             fileInput(inputId = ns("modalCover"), label = NULL, multiple = FALSE, accept = c(".webp", "png", "jpg"),
-      #                       placeholder = "Upload a cover...")
-      #         )
-      #       )
-      #   ),
-      #   DialogFooter(
-      #     PrimaryButton.shinyInput(ns("dialogSend"), text = "Send"),
-      #     DefaultButton.shinyInput(ns("dialogDontSend"), text = "Don't send")
-      #   )
-      # )
     })
     
     observeEvent(input$showDialog, isDialogOpen(TRUE))
     observeEvent(input$hideDialog, isDialogOpen(FALSE))
-    observeEvent(input$dialogSend, isDialogOpen(FALSE))
-    observeEvent(input$dialogDontSend, isDialogOpen(FALSE))
+    observeEvent(input$dialogUpdate, isDialogOpen(FALSE))
+    observeEvent(input$dialogCancel, isDialogOpen(FALSE))
+    
+    input$modalCover <- renderUI({
+      if(is.null(imgFile)) {
+        Image(src = sprintf("static/cover/movie/%s.%s", subject_id, tools::file_ext(cover)),
+              style = list(`max-width` = "100px"))
+      }
+    })
+    observeEvent(input$modalImgUpload, {
+      imgFile(file.choose())
+    })
   })
 }
 
