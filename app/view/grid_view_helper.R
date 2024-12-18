@@ -329,17 +329,20 @@ li_info <- function(..., class = "info") {
     )
   } else stop("invalid type")
 }
+
+#' @export
+genre_color_generator <- function() {
+  genre_all <- collection("database")$data$movie$genre |> 
+    str_split("\\s") |>
+    reduce(c) |>
+    unique()
+  genre_all |> 
+    set_names(random_r_colors(genre_all, accent = 5)) |>
+    na.omit()
+}
 li_genre <- function(...) {
   list2env(..., environment())
-  if(!exists("genre_colors", envir = .GlobalEnv)) {
-    genre_all <- collection("database")$data$movie$genre |> 
-      str_split("\\s") |>
-      reduce(c) |>
-      unique()
-    genre_colors <<- genre_all |> 
-      set_names(random_r_colors(genre_all, accent = 5)) |>
-      na.omit()
-  }
+  genre_colors <- genre_color_generator()
   genre <- str_split(genre, "\\s") |> reduce(c)
   tags$li(
     class = "info",

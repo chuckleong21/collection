@@ -11,8 +11,8 @@ box::use(
 
 box::use(
   app/logic/collection[collection],
-  app/view/grid_view_helper[gauge_path, divs, 
-                            region_tbl, random_r_colors]
+  app/view/grid_view_helper[gauge_path, divs, genre_color_generator,
+                            region_tbl]
 )
 
 div_item <- function(..., class = "item") {
@@ -84,15 +84,7 @@ genre_dropdown <- function(inputId, label, multiple, ...) {
   dropdown_options <- function(inputId, label) {
     list(key = inputId, text = label)
   }
-  if(!exists("genre_colors", envir = .GlobalEnv)) {
-    genre_all <- collection("database")$data$movie$genre |> 
-      str_split("\\s") |>
-      reduce(c) |>
-      unique()
-    genre_colors <<- genre_all |> 
-      set_names(random_r_colors(genre_all, accent = 5)) |>
-      na.omit()
-  }
+  genre_colors <- genre_color_generator()
   out <- map(genre_colors, \(x) dropdown_options(x, x)) |> unname()
   Dropdown.shinyInput(inputId = inputId, label = label, multiSelect = multiple, options = out, ...)
 }
