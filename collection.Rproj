@@ -1,8 +1,9 @@
 Version: 1.0
+ProjectId: d3089b21-5f54-4072-b47f-c48cc6e27fa4
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+RestoreWorkspace: No
+SaveWorkspace: No
+AlwaysSaveHistory: No
 
 EnableCodeIndexing: Yes
 UseSpacesForTab: Yes
@@ -11,3 +12,11 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+UseNativePipeOperator: Yes
+
+QuitChildProcessesOnExit: Yes
+
+PythonType: system
+PythonVersion: 3.12.4
+PythonPath: D:/Python/3.12.4/python.exe
