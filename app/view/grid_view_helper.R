@@ -2,11 +2,10 @@ box::use(
   assertthat[assert_that, `on_failure<-`], 
   countrycode[countrycode],
   dplyr[mutate, group_by, ungroup, slice_sample, 
-        slice, pull, transmute, cur_group_id],
+        slice, pull, transmute, left_join, cur_group_id],
   grDevices[colorRampPalette], 
   httr2[request, req_perform, resp_body_html],
   lubridate[as_date],
-  polyglotr[google_translate],
   purrr[map, reduce, map_vec, set_names],
   rvest[html_elements, html_text2],
   shiny[tags, tagList, div],
@@ -226,27 +225,24 @@ span_status <- function(...) {
 }
 #' @export
 region_tbl <- function() {
+  avail_regions <- collection("database")$data$movie$region |> 
+    str_split("\\s") |> 
+    reduce(c) |> 
+    unique() |> 
+    na.omit()
+  country_dict <- readRDS("app/static/country_dict.rds")
+  
   tibble(
-    country.name.cn = collection("database")$data$movie$region |> 
-      str_split("\\s") |> 
-      reduce(c) |> 
-      unique() |> 
-      na.omit() |>
-      str_c(collapse = "|"),
-    country.name.en = google_translate(country.name.cn, "en", "zh-CN")) |>
-    mutate(country.name.cn = str_split(country.name.cn, "\\|"),
-                  country.name.en = str_split(country.name.en, "\\|")) |>
-    unnest(c(country.name.cn, country.name.en)) |>
-    mutate(
-      continent.en = countrycode(country.name.en, "country.name.en", "continent"),
-      continent.cn = map_vec(continent.en, \(x) google_translate(x, "zh-CN", "en")),
-      country_id = tolower(countrycode(country.name.en, "country.name.en", "iso2c"))
-    ) |>
+    country.name.cn = avail_regions,
+  ) |>
+    left_join(
+      country_dict, by = "country.name.cn"
+    ) |> 
     transmute(
-      continent = continent.cn, 
+      continent_id = tolower(continent),
+      country_id = tolower(countrycode(country.name.en, "country.name.en", "iso2c")),
       country = country.name.cn,
-      continent_id = tolower(continent.en),
-      country_id = country_id
+      continent = continent.cn
     ) |>
     group_by(continent) |>
     mutate(divider_id = cur_group_id())
