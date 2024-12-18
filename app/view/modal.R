@@ -54,8 +54,6 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
   }
   assertthat::assert_that(is_dialog_type(type))
   assertthat::assert_that(is_valid_widths(widths))
-  assertthat::assert_that(inherits(onDismiss, "JS_EVAL"), 
-                          msg = "onDismiss is not a JavaScript Evaluation")
   
   # static data -------------------------------------------------------------
   
@@ -78,6 +76,10 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
         "  Shiny.setInputValue('", ns(dismissId),"', Math.random());",
         "}"
       ))
+  dismissId <- dismissId %||% "hideDialog"
+  assertthat::assert_that(inherits(onDismiss, "JS_EVAL"), 
+                          msg = "onDismiss is not a JavaScript Evaluation")
+  
   Dialog(
     minWidth = min(widths), maxWidth = max(widths),
     hidden = hidden, onDismiss = onDismiss,
