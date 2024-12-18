@@ -3,10 +3,11 @@ library(shiny.fluent)
 
 box::use(
   stringr[str_replace, str_split],
-  purrr[reduce, map2],
+  purrr[reduce, map, map2],
   app/logic/collection[collection],
   app/logic/api[api],
-  app/view/grid_view[genre_dropdown, region_dropdown]
+  app/view/grid_view[genre_dropdown, region_dropdown],
+  app/view/grid_view_helper[genre_color_generator]
 )
 
 movie <- collection("database")$data$movie
@@ -151,8 +152,7 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
         ),
         div(
           class = "record-grid-item", 
-          TextField.shinyInput(inputId = ns("modalCreatedAt"), ariaLabel = "CreatedAt", label = "Created At", 
-                               borderless = TRUE, underlined = TRUE, disabled = TRUE, value = as.character(created_at))
+          uiOutput(ns("modalTimestamp"))
         ), 
         div(
           class = "record-grid-item", 
@@ -173,14 +173,14 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
   )
 }
 
-server <- function(id) {
+server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
     isDialogOpen <- reactiveVal(FALSE)
     imgFile <- reactiveVal(NULL)
     output$reactDialog <- renderReact({
-      movie_modal(record, 
+      movie_modal(data = data, 
                   ns = ns, 
                   type = 0, 
                   hidden = !isDialogOpen(), 
@@ -192,18 +192,35 @@ server <- function(id) {
     observeEvent(input$dialogUpdate, isDialogOpen(FALSE))
     observeEvent(input$dialogCancel, isDialogOpen(FALSE))
     
-    input$modalCover <- renderUI({
-      if(is.null(imgFile)) {
-        Image(src = sprintf("static/cover/movie/%s.%s", subject_id, tools::file_ext(cover)),
-              style = list(`max-width` = "100px"))
-      }
+    output$modalCover <- renderUI({
+      img_src <- ifelse(is.null(imgFile()), 
+                        sprintf("static/cover/movie/%s.%s", record$subject_id, tools::file_ext(record$cover)),
+                        imgFile())
+      Image(src = img_src, style = list(`max-width` = "100px"), alt = data$title)
+      # tags$img(src = img_src, alt = data$title, style = "max-width:100px;")
     })
     observeEvent(input$modalImgUpload, {
-      imgFile(file.choose())
+      f <- tryCatch(file.choose(), error = function(e) NULL)
+      if(!is.null(f)) {
+        f <- stringr::str_extract(f, "static.+") |> 
+          stringr::str_replace_all("\\\\", "/") 
+        imgFile(f)
+      }
+    })
+    output$modalTimestamp <- renderUI({
+      if(is.null(imgFile())) {
+        TextField.shinyInput(inputId = ns("modalCreatedAt"), ariaLabel = "CreatedAt", label = "Created At", 
+                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = as.character(data$created_at))
+      } else {
+        current_time <- Sys.time() |> as.character() |> stringr::str_replace("\\..+", "")
+        TextField.shinyInput(inputId = ns("modalUpdatedAt"), ariaLabel = "UpdatedAt", label = "Updated At", 
+                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = current_time)
+      }
     })
   })
 }
-
+  
 if (interactive()) {
-  shinyApp(ui("app"), function(input, output) server("app"))
+  shinyApp(ui("app"), function(input, output) server("app", data = record))
 }
+  
