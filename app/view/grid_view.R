@@ -15,15 +15,16 @@ box::use(
                             region_tbl, genre_colors]
 )
 
-div_item <- function(..., class = "item") {
+div_item <- function(ns, ..., class = "item") {
   div(
     class = class, 
     gauge_path(...),
     div(
       class = "intro",
       divs(..., class = "title"),
-      divs(..., class = "meta")
-    )
+      divs(..., class = "meta"),
+    ),
+    divs(..., class = "edit", ns = ns)
   )
 }
 #' @export
@@ -90,8 +91,8 @@ genre_dropdown <- function(inputId, label, multiple, ...) {
 }
 
 #' @export
-grid_view <- function(x) {
+grid_view <- function(x, ns) {
     tagList(
-      map(seq_len(nrow(x)), \(i) div_item(x[i, ]))
+      map(seq_len(nrow(x)), \(i) div_item(ns, x[i, ]))
     )
 }

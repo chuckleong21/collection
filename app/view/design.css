@@ -79,3 +79,16 @@ svg {
     list-style: outside none none;
     line-height: 32px;
 }
+
+.edit {
+    width:2rem;
+    padding-bottom:15%;
+}
+
+.edit button {
+    visibility: hidden;
+}
+
+.edit:hover  button {
+    visibility: visible;
+}

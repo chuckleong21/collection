@@ -40,7 +40,7 @@ ui <- function(id) {
   ns <- shiny::NS(id)
   fluentPage(
     region_dropdown("region", "Region", multiple = TRUE),
-    grid_view(utils::tail(movie, 20))
+    grid_view(utils::tail(movie, 20), ns = ns)
     # gt::gt_output(ns("table"))
   )
 }

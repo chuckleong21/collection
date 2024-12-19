@@ -345,7 +345,7 @@ li_genre <- function(...) {
 }
 
 #' @export
-divs <- function(..., class, flag_size = "big") {
+divs <- function(..., class, flag_size = "big", ns) {
   list2env(..., environment())
   switch(
     class, 
@@ -374,6 +374,11 @@ divs <- function(..., class, flag_size = "big") {
         lis(..., class = "info"),
         tags$li(class = "date", paste0("记录于", as_date(created_at)))
       )
+    ),
+    "edit" = div(
+      class = class, 
+      shiny.fluent::ActionButton.shinyInput(inputId = ns(sprintf("edit-%s", subject_id)), 
+                                            iconProps = list(iconName = "EditSolid12"), text = "")
     )
   )
 }
