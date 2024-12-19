@@ -7,7 +7,6 @@ box::use(
   httr2[request, req_perform, resp_body_html],
   lubridate[as_date],
   purrr[map, reduce, map_vec, set_names],
-  rvest[html_elements, html_text2],
   shiny[tags, tagList, div],
   stats[na.omit],
   stringr[str_replace, str_c, str_split, str_which, str_replace_all],
@@ -41,23 +40,8 @@ random_r_colors <- function(x, accent, include.na) {
 }
 
 random_r_colors.default <- function(x, accent, include.na = TRUE) {
-  response <- request("https://r-charts.com/colors/") |> 
-    req_perform() |>
-    resp_body_html()
+  colors_tbl <- readRDS("app/static/color_dict.rds")
   
-  colors_tbl <- response |> 
-    html_elements(xpath = '//*[@id="top"]/section[4]/div/div[3]/div') |>
-    map(\(x) {
-      e <- html_elements(x, "#clipboardItem p") |>
-        html_text2()
-      str_c(e[seq(1, length(e), 2)], e[seq(2, length(e), 2)], sep = ":")
-    }) |>
-    enframe(name = "id") |>
-    unnest(value) |>
-    separate(value, c("name", "code"), ":") |> 
-    group_by(id) |>
-    slice(accent) |>
-    ungroup()
   is_scalar_numeric <- function(x) is.numeric(x) & length(x) == 1
   on_failure(is_scalar_numeric) <- function(call, env) paste0(deparse(call$x), " is not a scalar")
   assert_that(is_scalar_numeric(accent), accent %in% 1:5)
@@ -341,6 +325,7 @@ genre_color_generator <- function() {
     na.omit()
 }
 li_genre <- function(...) {
+  # browser()
   list2env(..., environment())
   genre_colors <- genre_color_generator()
   genre <- str_split(genre, "\\s") |> reduce(c)
@@ -349,7 +334,7 @@ li_genre <- function(...) {
     map(genre, \(g) {
       if(!is.na(g)) {
         style <- sprintf('background-color:%s;color:#fff;padding:4px 4px;text-align:center;border-radius:6px;', 
-                         names(.GlobalEnv$genre_colors[str_which(.GlobalEnv$genre_colors, g)]))
+                         names(genre_colors[str_which(genre_colors, g)]))
         tags$span(style = style, g)
       }
     })
