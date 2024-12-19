@@ -7,7 +7,6 @@ box::use(
   app/logic/collection[collection],
   app/logic/api[api],
   app/view/grid_view[genre_dropdown, region_dropdown],
-  app/view/grid_view_helper[genre_color_generator]
 )
 
 movie <- collection("database")$data$movie
