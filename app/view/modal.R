@@ -97,11 +97,19 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
           TextField.shinyInput(inputId = ns("modalTitle"), ariaLabel = "Title", label = "Title", 
                                borderless = TRUE, underlined = TRUE, value = title)
         ),
-        div(
-          class = "record-grid-item", 
-          TextField.shinyInput(inputId = ns("modalYear"), ariaLabel = "Year", label = "Year", 
-                               borderless = TRUE, underlined = TRUE, value = year)
-        ),
+        if(type != "game") {
+          div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalYear"), ariaLabel = "Year", label = "Year", 
+                                 borderless = TRUE, underlined = TRUE, value = year)
+          )
+        } else {
+          div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalRelease"), ariaLabel = "Release", label = "Release", 
+                                 borderless = TRUE, underlined = TRUE, value = release)
+          )
+        },
         switch(
           type,
           "movie" = div(
@@ -118,6 +126,11 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
             class = "record-grid-item", 
             TextField.shinyInput(inputId = ns("modalPerformer"), ariaLabel = "Performer", label = "Performer", 
                                  borderless = TRUE, underlined = TRUE, value = performer)
+          ),
+          "game" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalCategory"), ariaLabel = "Category", label = "Category", 
+                                 borderless = TRUE, underlined = TRUE, value = category)
           )
         ),
         switch(
@@ -131,6 +144,11 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
             class = "record-grid-item", 
             TextField.shinyInput(inputId = ns("modalPublisher"), ariaLabel = "Publisher", label = "Publisher", 
                                  borderless = TRUE, underlined = TRUE, value = publisher)
+          ), 
+          "game" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalDeveloper"), ariaLabel = "Developer", label = "Developer", 
+                                 borderless = TRUE, underlined = TRUE, value = developer)
           )
         ),
         switch(
@@ -162,18 +180,19 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
           Dropdown.shinyInput(inputId = ns("modalStatus"), label = "Status", value = status,
                               options = switch(type, 
                                                "movie" = map(c("想看", "在看", "看过"), \(x) dropdown_options(x, x)),
-                                               "book" = map(c("想读", "在读", "读过"), \(x) dropdown_options(x, x)),
-                                               "music" = map(c("想听", "在听", "听过"), \(x) dropdown_options(x, x))))
+                                               "book"  = map(c("想读", "在读", "读过"), \(x) dropdown_options(x, x)),
+                                               "music" = map(c("想听", "在听", "听过"), \(x) dropdown_options(x, x)),
+                                               "game"  = map(c("想玩", "在玩", "玩过"), \(x) dropdown_options(x, x))))
         ),
         div(
           class = "record-grid-item", style = "padding-top:2.5rem;",
           TextField.shinyInput(inputId = ns("modalRating"), ariaLabel = "Rating", label = "Rating", 
-                               borderless = TRUE, underlined = TRUE, value = ifelse(is.na(my_rating), 0, my_rating))
+                               borderless = TRUE, underlined = TRUE, value = rating)
         ), 
         div(
           class = "record-grid-item",
           SpinButton.shinyInput(inputId = ns("modalMyrating"), ariaLabel = "Myrating", label = "My Rating", 
-                                min = 0, max = 5, step = 1, value = my_rating)
+                                min = 0, max = 5, step = 1, value = ifelse(is.na(my_rating), 0, my_rating))
         ),
         div(
           class = "record-grid-item",
