@@ -11,34 +11,29 @@ box::use(
 )
 
 movie <- collection("database")$data$movie
+book <- collection("database")$data$book
 set.seed(100)
-record <- movie |> 
-  dplyr::filter(stringr::str_count(region, "\\s") >= 1) |> 
+# record <- movie |>
+#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
+#   dplyr::slice_sample(n = 1)
+record <- book |>
+  # dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
   dplyr::slice_sample(n = 1)
 
-ui <- function(id) {
-  ns <- NS(id)
-  tagList(
-    tags$head(
-      tags$style(
-        ".record-grid {
-        display:grid;grid-template-columns:repeat(2, 1fr);grid-template-rows:repeat(8, 1fr);gap:10px;padding:10px;
-        }
-        .record-grid-item {padding:10px;}
-        "
-      )
-    ),
-    div(
-      DefaultButton.shinyInput(ns("showDialog"), text = "Open dialog"),
-      reactOutput(ns("reactDialog"))
-    )
-  )
-}
-
-movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL, 
-                        widths, hidden = NULL, 
+movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading = NULL, 
+                        widths = NULL, hidden = NULL, 
                         dismissId = NULL, modal_props = list(), 
                         footer_button = c("Update", "Cancel")) {
+
+  # default arguments -------------------------------------------------------
+
+  list2env(data, environment())
+  dialog_type <- dialog_type %||% 0
+  widths <- widths %||% c(500, 960)
+  API <- api(url)
+  heading <- heading %||% sprintf("编辑条目:%s", title)
+  subheading <- subheading %||% sprintf("API: /%s/%s/%s", API$domain, API$schema, API$id)
+  dismissId <- dismissId %||% "hideDialog"
   
   # argument checks ---------------------------------------------------------
   
@@ -53,31 +48,25 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
   assertthat::on_failure(is_valid_widths) <- function(call, env) {
     sprintf("Maximum length of 'widths' is %g instead of 2", length(call$x))
   }
-  assertthat::assert_that(is_dialog_type(type))
+  assertthat::assert_that(is_dialog_type(dialog_type))
   assertthat::assert_that(is_valid_widths(widths))
   
   # static data -------------------------------------------------------------
   
-  list2env(data, environment())
   dropdown_options <- function(inputId, label) {
     list(key = inputId, text = label)
   }
-  API <- api(url)
-  title <- title %||% "编辑条目"
-  subtitle <- subtitle %||% sprintf("API: /%s/%s/%s", API$domain, API$schema, API$id)
-  dismissId <- dismissId %||% "hideDialog"
   dialogContentProps <- list(
     type = type, 
-    title = title, 
+    title = heading, 
     closeButtonAriaLabel = "Close", 
-    subText = subtitle
+    subText = subheading
   )
   onDismiss <- JS(paste0(
     "function() {",
     "  Shiny.setInputValue('", ns(dismissId),"', Math.random());",
     "}"
   ))
-  dismissId <- dismissId %||% "hideDialog"
   assertthat::assert_that(inherits(onDismiss, "JS_EVAL"), 
                           msg = "onDismiss is not a JavaScript Evaluation")
   
@@ -105,35 +94,62 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
           TextField.shinyInput(inputId = ns("modalYear"), ariaLabel = "Year", label = "Year", 
                                borderless = TRUE, underlined = TRUE, value = year)
         ),
-        div(
-          class = "record-grid-item", 
-          region_dropdown(ns("modalRegion"), label = "Region", multiple = TRUE, 
-                          value = reduce(str_split(region, "\\s"), c))
+        switch(
+          type,
+          "movie" = div(
+            class = "record-grid-item", 
+            region_dropdown(ns("modalRegion"), label = "Region", multiple = TRUE, 
+                            value = reduce(str_split(region, "\\s"), c))
+          ),
+          "book" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalAuthor"), ariaLabel = "Author", label = "Author", 
+                                 borderless = TRUE, underlined = TRUE, value = author)
+          )
         ),
-        div(
-          class = "record-grid-item", 
-          genre_dropdown(ns("modalGenre"), label = "Genre", multiple = TRUE, 
-                         value = reduce(str_split(genre, "\\s"), c))
+        switch(
+          type, 
+          "movie" = div(
+            class = "record-grid-item", 
+            genre_dropdown(ns("modalGenre"), label = "Genre", multiple = TRUE, 
+                           value = reduce(str_split(genre, "\\s"), c))
+          ), 
+          "book" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalPublisher"), ariaLabel = "Publisher", label = "Publisher", 
+                                 borderless = TRUE, underlined = TRUE, value = publisher)
+          )
         ),
-        div(
-          class = "record-grid-item", 
-          TextField.shinyInput(inputId = ns("modalDirector"), ariaLabel = "Director", label = "Director",
-                               borderless = TRUE, underlined = TRUE, value = director)
+        switch(
+          type, 
+          "movie" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalDirector"), ariaLabel = "Director", label = "Director",
+                                 borderless = TRUE, underlined = TRUE, value = director)
+          )
         ),
-        div(
-          class = "record-grid-item", 
-          TextField.shinyInput(inputId = ns("modalStarring"), ariaLabel = "Starring", label = "Starring",
-                               borderless = TRUE, underlined = TRUE, value = starring)
+        switch(
+          type, 
+          "movie" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalStarring"), ariaLabel = "Starring", label = "Starring",
+                                 borderless = TRUE, underlined = TRUE, value = starring)
+          )
         ),
-        div(
-          class = "record-grid-item", 
-          TextField.shinyInput(inputId = ns("modalSite"), ariaLabel = "Site", label = "Site", 
-                               borderless = TRUE, underlined = TRUE, value = site)
+        switch(
+          type, 
+          "movie" =  div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalSite"), ariaLabel = "Site", label = "Site", 
+                                 borderless = TRUE, underlined = TRUE, value = site)
+          )
         ), 
         div(
           class = "record-grid-item", 
           Dropdown.shinyInput(inputId = ns("modalStatus"), label = "Status", value = status,
-                              options = map(c("想看", "在看", "看过"), \(x) dropdown_options(x, x)))
+                              options = switch(type, 
+                                               "movie" = map(c("想看", "在看", "看过"), \(x) dropdown_options(x, x)),
+                                               "book" = map(c("想读", "在读", "读过"), \(x) dropdown_options(x, x))))
         ),
         div(
           class = "record-grid-item", style = "padding-top:2.5rem;",
@@ -173,6 +189,26 @@ movie_modal <- function(data, ns, type, title = NULL, subtitle = NULL,
   )
 }
 
+ui <- function(id) {
+  ns <- NS(id)
+  tagList(
+    tags$head(
+      tags$style(
+        ".record-grid {
+        display:grid;grid-template-columns:repeat(2, 1fr);grid-template-rows:repeat(8, 1fr);gap:10px;padding:10px;
+        }
+        .record-grid-item {padding:10px;}
+        "
+      )
+    ),
+    div(
+      DefaultButton.shinyInput(ns("showDialog"), text = "Open dialog"),
+      reactOutput(ns("reactDialog"))
+    )
+  )
+}
+
+
 server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -182,7 +218,7 @@ server <- function(id, data) {
     output$reactDialog <- renderReact({
       movie_modal(data = data, 
                   ns = ns, 
-                  type = 0, 
+                  dialog_type = 0, 
                   hidden = !isDialogOpen(), 
                   widths = c(500, 960))
     })
