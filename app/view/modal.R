@@ -11,21 +11,30 @@ box::use(
 
 movie <- collection("database")$data$movie
 book <- collection("database")$data$book
+music <- collection("database")$data$music
+game <- collection("database")$data$game
 set.seed(100)
 # record <- movie |>
 #   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
 #   dplyr::slice_sample(n = 1)
-record <- book |>
+# record <- book |>
+#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
+#   dplyr::slice_sample(n = 1)
+# record <- music |>
+#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
+#   dplyr::slice_sample(n = 1)
+record <- game |>
   # dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
   dplyr::slice_sample(n = 1)
+
 
 movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading = NULL, 
                         widths = NULL, hidden = NULL, 
                         dismissId = NULL, modal_props = list(), 
                         footer_button = c("Update", "Cancel")) {
-
+  
   # default arguments -------------------------------------------------------
-
+  
   list2env(data, environment())
   dialog_type <- dialog_type %||% 0
   widths <- widths %||% c(500, 960)
@@ -104,6 +113,11 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
             class = "record-grid-item", 
             TextField.shinyInput(inputId = ns("modalAuthor"), ariaLabel = "Author", label = "Author", 
                                  borderless = TRUE, underlined = TRUE, value = author)
+          ), 
+          "music" = div(
+            class = "record-grid-item", 
+            TextField.shinyInput(inputId = ns("modalPerformer"), ariaLabel = "Performer", label = "Performer", 
+                                 borderless = TRUE, underlined = TRUE, value = performer)
           )
         ),
         switch(
@@ -148,12 +162,13 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
           Dropdown.shinyInput(inputId = ns("modalStatus"), label = "Status", value = status,
                               options = switch(type, 
                                                "movie" = map(c("想看", "在看", "看过"), \(x) dropdown_options(x, x)),
-                                               "book" = map(c("想读", "在读", "读过"), \(x) dropdown_options(x, x))))
+                                               "book" = map(c("想读", "在读", "读过"), \(x) dropdown_options(x, x)),
+                                               "music" = map(c("想听", "在听", "听过"), \(x) dropdown_options(x, x))))
         ),
         div(
           class = "record-grid-item", style = "padding-top:2.5rem;",
           TextField.shinyInput(inputId = ns("modalRating"), ariaLabel = "Rating", label = "Rating", 
-                               borderless = TRUE, underlined = TRUE, value = rating)
+                               borderless = TRUE, underlined = TRUE, value = ifelse(is.na(my_rating), 0, my_rating))
         ), 
         div(
           class = "record-grid-item",
@@ -229,7 +244,7 @@ server <- function(id, data) {
     
     output$modalCover <- renderUI({
       img_src <- ifelse(is.null(imgFile()), 
-                        sprintf("static/cover/movie/%s.%s", record$subject_id, tools::file_ext(record$cover)),
+                        sprintf("static/cover/%s/%s.%s", data$type, data$subject_id, tools::file_ext(data$cover)),
                         imgFile())
       Image(src = img_src, style = list(`max-width` = "100px"), alt = data$title)
       # tags$img(src = img_src, alt = data$title, style = "max-width:100px;")
@@ -254,8 +269,7 @@ server <- function(id, data) {
     })
   })
 }
-  
+
 if (interactive()) {
   shinyApp(ui("app"), function(input, output) server("app", data = record))
 }
-  
