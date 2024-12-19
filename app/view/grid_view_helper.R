@@ -314,20 +314,23 @@ li_info <- function(..., class = "info") {
   } else stop("invalid type")
 }
 
-#' @export
-genre_color_generator <- function() {
+genre_color_generator <- function(accent, seed) {
+  set.seed(seed)
   genre_all <- collection("database")$data$movie$genre |> 
     str_split("\\s") |>
     reduce(c) |>
     unique()
   genre_all |> 
-    set_names(random_r_colors(genre_all, accent = 5)) |>
+    set_names(random_r_colors(genre_all, accent = accent)) |>
     na.omit()
 }
+
+#' @export
+genre_colors <- genre_color_generator(3, 100)
+
 li_genre <- function(...) {
-  # browser()
   list2env(..., environment())
-  genre_colors <- genre_color_generator()
+  # genre_colors <- genre_color_generator()
   genre <- str_split(genre, "\\s") |> reduce(c)
   tags$li(
     class = "info",

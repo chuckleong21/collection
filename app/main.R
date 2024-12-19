@@ -5,7 +5,7 @@ box::use(
 )
 box::use(
   app/logic/import[import_to_database],
-  app/view/grid_view[region_dropdown, genre_dropdown, grid_view],
+  app/view/grid_view[region_dropdown, genre_dropdown, grid_view]
 )
 
 # ui <- function(id) {
@@ -30,9 +30,6 @@ box::use(
 
 newdb <- import_to_database("app/static/豆伴(58485907)_2.xlsx")
 movie <- newdb$data$movie
-
-
-# Rendering headers and dividers inside dropdown
 
 #' @export
 ui <- function(id) {

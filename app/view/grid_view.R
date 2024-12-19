@@ -11,8 +11,8 @@ box::use(
 
 box::use(
   app/logic/collection[collection],
-  app/view/grid_view_helper[gauge_path, divs, genre_color_generator,
-                            region_tbl]
+  app/view/grid_view_helper[gauge_path, divs,
+                            region_tbl, genre_colors]
 )
 
 div_item <- function(..., class = "item") {
