@@ -110,7 +110,11 @@ heatmap_label <- function(date) {
       }
     }) %>% 
     do.call(cbind, .)
-  a <- a[month(date) + 1, ]
+  if(month(date) != 12) {
+    a <- a[month(date) + 1, ]
+  } else {
+    a <- a[1, ]
+  }
   x <- cumsum(c(3, 5, 4, 4, 5, 4, 4, 5, 4, 4, 5, 4)) * 13
   map2(x, a, \(x, y) tags$text(
     x = as.character(x), y = as.character(-5), 
