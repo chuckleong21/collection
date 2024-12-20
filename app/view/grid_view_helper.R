@@ -1,75 +1,16 @@
 box::use(
   assertthat[assert_that, `on_failure<-`], 
-  countrycode[countrycode],
-  dplyr[mutate, group_by, ungroup, slice_sample, 
-        slice, pull, transmute, left_join, cur_group_id],
   grDevices[colorRampPalette], 
-  httr2[request, req_perform, resp_body_html],
   lubridate[as_date],
-  purrr[map, reduce, map_vec, set_names],
+  purrr[map, reduce],
   shiny[tags, tagList, div],
-  stats[na.omit],
   stringr[str_replace, str_c, str_split, str_which, str_replace_all],
-  tibble[enframe, tibble],
   tidyr[unnest, separate],
   xfun[download_file],
 )
 
-box::use(app/logic/collection[collection])
-
-#' Generate random R colors
-#' 
-#' @section Details:
-#' The function returns color hex codes by scraping 
-#' \href{https://r-charts.com/colors/} {R-colors}. The website groups
-#' the color tone nicely and each group has 5 color accents.
-#' 
-#' @param x An integer. The number of colors to generate,\cr A character vector.
-#' @param accent An integer. The color accent to use
-#' @param ... other arguments
-#'
-#' @return A character vector of hex color codes
-#' @export
-#' 
-#' @examples
-#' random_r_colors(3, accent = 3)
-#' random_r_colors(letters[1:5], accent = 2)
-#' 
-random_r_colors <- function(x, accent, include.na) {
-  UseMethod("random_r_colors")
-}
-
-random_r_colors.default <- function(x, accent, include.na = TRUE) {
-  colors_tbl <- readRDS("app/static/color_dict.rds")
-  
-  is_scalar_numeric <- function(x) is.numeric(x) & length(x) == 1
-  on_failure(is_scalar_numeric) <- function(call, env) paste0(deparse(call$x), " is not a scalar")
-  assert_that(is_scalar_numeric(accent), accent %in% 1:5)
-  
-  if(inherits(x, "numeric")) {
-    assert_that(is_scalar_numeric(x), !is.na(x))
-  } else if(inherits(x, "character")) {
-    if(any(is.na(x))) {
-      if(!include.na) {
-        warning(sprintf("remove %g NA value(s)", length(which(is.na(x)))))
-        x <- na.omit(x)
-      } else x
-    }
-    x <- length(x)
-  } else {
-    x <- as.character(x)
-    if(any(is.na(x))) {
-      if(!include.na) {
-        warning(sprintf("remove %g NA value(s)", length(which(is.na(x)))))
-        x <- na.omit(x)
-      } else x
-    }
-    x <- length(x)
-  }
-  colors_tbl |>
-    slice_sample(n = x) |>
-    pull(code)
-}
+box::use(app/logic/collection[collection],
+         app/view/constant[genre_colors, category_colors, regions])
 
 #' Draw Gauges
 #'
@@ -207,36 +148,9 @@ span_status <- function(...) {
                          badge_col)
   tags$span(style = badge_style, status)
 }
-#' @export
-region_tbl <- function() {
-  avail_regions <- collection("database")$data$movie$region |> 
-    str_split("\\s") |> 
-    reduce(c) |> 
-    unique() |> 
-    na.omit()
-  country_dict <- readRDS("app/static/country_dict.rds")
-  
-  tibble(
-    country.name.cn = avail_regions,
-  ) |>
-    left_join(
-      country_dict, by = "country.name.cn"
-    ) |> 
-    transmute(
-      continent_id = tolower(continent),
-      country_id = tolower(countrycode(country.name.en, "country.name.en", "iso2c")),
-      country = country.name.cn,
-      continent = continent.cn
-    ) |>
-    group_by(continent) |>
-    mutate(divider_id = cur_group_id())
-}
 
 span_region <- function(..., flag_size = c("small", "big")) {
   list2env(..., environment())
-  if(!exists("regions", .GlobalEnv)) {
-    regions <<- region_tbl()
-  }
   flag_size <- match.arg(flag_size)
   flag_size <- switch(flag_size, "small" = "s", "big" = "b")
   region <- str_split(region, "\\s") |> reduce(c)
@@ -244,7 +158,7 @@ span_region <- function(..., flag_size = c("small", "big")) {
     map(region, \(r) {
       if(!is.na(r)) {
         tags$span(class = sprintf("fi fi-%s fi%s", 
-                                         .GlobalEnv$regions$country_id[charmatch(r, .GlobalEnv$regions$country)], 
+                                         regions$country_id[charmatch(r, regions$country)], 
                                          flag_size))
       }
     })
@@ -252,22 +166,13 @@ span_region <- function(..., flag_size = c("small", "big")) {
 }
 li_category <- function(...) {
   list2env(..., environment())
-  if(!exists("category_colors", envir = .GlobalEnv)) {
-    category_colors <- collection("database")$data$game$category |> 
-      str_split("\\s") |>
-      reduce(c) |>
-      unique() |>
-      na.omit()
-    category_colors <<- category_colors |> 
-      set_names(random_r_colors(category_colors, accent = 3))
-  }
   category <- str_split(category, "\\s") |> reduce(c)
   tags$li(
     class = "info",
     map(category, \(cat) {
       if(!is.na(cat)) {
         style <- sprintf('background-color:%s;color:#000;padding:4px 4px;text-align:center;border-radius:6px;', 
-                         names(.GlobalEnv$category_colors[str_which(.GlobalEnv$category_colors, cat)]))
+                         names(category_colors[str_which(category_colors, cat)]))
         tags$span(style = style, cat)
       }
     })
@@ -314,23 +219,8 @@ li_info <- function(..., class = "info") {
   } else stop("invalid type")
 }
 
-genre_color_generator <- function(accent, seed) {
-  set.seed(seed)
-  genre_all <- collection("database")$data$movie$genre |> 
-    str_split("\\s") |>
-    reduce(c) |>
-    unique()
-  genre_all |> 
-    set_names(random_r_colors(genre_all, accent = accent)) |>
-    na.omit()
-}
-
-#' @export
-genre_colors <- genre_color_generator(3, 100)
-
 li_genre <- function(...) {
   list2env(..., environment())
-  # genre_colors <- genre_color_generator()
   genre <- str_split(genre, "\\s") |> reduce(c)
   tags$li(
     class = "info",

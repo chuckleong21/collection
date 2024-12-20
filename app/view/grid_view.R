@@ -11,8 +11,8 @@ box::use(
 
 box::use(
   app/logic/collection[collection],
-  app/view/grid_view_helper[gauge_path, divs,
-                            region_tbl, genre_colors]
+  app/view/grid_view_helper[gauge_path, divs],
+  app/view/constant[regions]
 )
 
 div_item <- function(ns, ..., class = "item") {
@@ -45,11 +45,8 @@ region_dropdown <- function(inputId, label, multiple, ...) {
   dropdown_options <- function(inputId, label) {
     list(key = inputId, text = label)
   }
-  if(!exists("regions", .GlobalEnv)) {
-    regions <<- region_tbl()
-  }
   
-  regions_list <- .GlobalEnv$regions |> 
+  regions_list <- regions |> 
     group_by(continent) |>
     group_split()
   max_divider_id <- regions_list |>
