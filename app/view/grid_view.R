@@ -12,7 +12,7 @@ box::use(
 box::use(
   app/logic/collection[collection],
   app/view/grid_view_helper[gauge_path, divs],
-  app/view/constant[regions]
+  app/view/constant[genre_colors, category_colors, regions]
 )
 
 div_item <- function(ns, ..., class = "item") {
@@ -82,8 +82,16 @@ genre_dropdown <- function(inputId, label, multiple, ...) {
   dropdown_options <- function(inputId, label) {
     list(key = inputId, text = label)
   }
-  genre_colors <- genre_color_generator()
   out <- map(genre_colors, \(x) dropdown_options(x, x)) |> unname()
+  Dropdown.shinyInput(inputId = inputId, label = label, multiSelect = multiple, options = out, ...)
+}
+
+#' @export
+category_dropdown <- function(inputId, label, multiple, ...) {
+  dropdown_options <- function(inputId, label) {
+    list(key = inputId, text = label)
+  }
+  out <- map(category_colors, \(x) dropdown_options(x, x)) |> unname()
   Dropdown.shinyInput(inputId = inputId, label = label, multiSelect = multiple, options = out, ...)
 }
 

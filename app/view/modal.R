@@ -6,7 +6,7 @@ box::use(
   purrr[reduce, map, map2],
   app/logic/collection[collection],
   app/logic/api[api],
-  app/view/grid_view[genre_dropdown, region_dropdown],
+  app/view/grid_view[genre_dropdown, region_dropdown, category_dropdown],
 )
 
 movie <- collection("database")$data$movie
@@ -84,16 +84,40 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
     # modal contents ----------------------------------------------------------
     
     div(class = "record-grid", 
+        # subject_id --------------------------------------------------------------
         div(
           class = "record-grid-item",
           TextField.shinyInput(inputId = ns("modalSubjectID"), ariaLabel = "SubjectID", label = "ID", 
                                borderless = TRUE, underlined = TRUE, value = subject_id, disabled = TRUE)
         ),
+        # url ---------------------------------------------------------------------
+        div(
+          class = "record-grid-item",
+          TextField.shinyInput(inputId = ns("modalURL"), ariaLabel = "Url", label = "URL", 
+                               borderless = TRUE, underlined = TRUE, value = url, disabled = TRUE)
+        ),
+        # timestamp ---------------------------------------------------------------
+        div(
+          class = "record-grid-item", 
+          uiOutput(ns("modalTimestamp"))
+        ), 
+        # rating ------------------------------------------------------------------
+        div(
+          class = "record-grid-item", 
+          # style = "padding-top:2.5rem;",
+          # TextField.shinyInput(inputId = ns("modalRating"), ariaLabel = "Rating", label = "Rating", 
+          #                      borderless = TRUE, underlined = TRUE, value = rating),
+          SpinButton.shinyInput(inputId = ns("modalRating"), ariaLbel = "Rating", label = "Rating", 
+                                min = 0, max = 10, step = 0.1, disabled = TRUE, 
+                                value = ifelse(is.na(rating), 0, rating))
+        ), 
+        # title -------------------------------------------------------------------
         div(
           class = "record-grid-item",
           TextField.shinyInput(inputId = ns("modalTitle"), ariaLabel = "Title", label = "Title", 
                                borderless = TRUE, underlined = TRUE, value = title)
         ),
+        # year --------------------------------------------------------------------
         if(type != "game") {
           div(
             class = "record-grid-item", 
@@ -107,6 +131,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                  borderless = TRUE, underlined = TRUE, value = release)
           )
         },
+        # region/category ---------------------------------------------------------
         switch(
           type,
           "movie" = div(
@@ -126,10 +151,11 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
           ),
           "game" = div(
             class = "record-grid-item", 
-            TextField.shinyInput(inputId = ns("modalCategory"), ariaLabel = "Category", label = "Category", 
-                                 borderless = TRUE, underlined = TRUE, value = category)
+            category_dropdown(inputId = ns("modalCategory"), label = "Category", multiple = TRUE, 
+                              value = reduce(str_split(category, "\\s"), c))
           )
         ),
+        # genre -------------------------------------------------------------------
         switch(
           type, 
           "movie" = div(
@@ -148,6 +174,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                  borderless = TRUE, underlined = TRUE, value = developer)
           )
         ),
+        # director ----------------------------------------------------------------
         switch(
           type, 
           "movie" = div(
@@ -156,6 +183,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                  borderless = TRUE, underlined = TRUE, value = director)
           )
         ),
+        # starring ----------------------------------------------------------------
         switch(
           type, 
           "movie" = div(
@@ -164,6 +192,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                  borderless = TRUE, underlined = TRUE, value = starring)
           )
         ),
+        # site --------------------------------------------------------------------
         switch(
           type, 
           "movie" =  div(
@@ -172,6 +201,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                  borderless = TRUE, underlined = TRUE, value = site)
           )
         ), 
+        # status ------------------------------------------------------------------
         div(
           class = "record-grid-item", 
           Dropdown.shinyInput(inputId = ns("modalStatus"), label = "Status", value = status,
@@ -181,25 +211,13 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
                                                "music" = map(c("想听", "在听", "听过"), \(x) dropdown_options(x, x)),
                                                "game"  = map(c("想玩", "在玩", "玩过"), \(x) dropdown_options(x, x))))
         ),
-        div(
-          class = "record-grid-item", style = "padding-top:2.5rem;",
-          TextField.shinyInput(inputId = ns("modalRating"), ariaLabel = "Rating", label = "Rating", 
-                               borderless = TRUE, underlined = TRUE, value = rating)
-        ), 
+        # myrating ----------------------------------------------------------------
         div(
           class = "record-grid-item",
           SpinButton.shinyInput(inputId = ns("modalMyrating"), ariaLabel = "Myrating", label = "My Rating", 
                                 min = 0, max = 5, step = 1, value = ifelse(is.na(my_rating), 0, my_rating))
         ),
-        div(
-          class = "record-grid-item",
-          TextField.shinyInput(inputId = ns("modalURL"), ariaLabel = "Url", label = "URL", 
-                               borderless = TRUE, underlined = TRUE, value = url, disabled = TRUE)
-        ),
-        div(
-          class = "record-grid-item", 
-          uiOutput(ns("modalTimestamp"))
-        ), 
+        # cover -------------------------------------------------------------------
         div(
           class = "record-grid-item", 
           div(style = "display:flex;gap:1rem;",
@@ -287,5 +305,5 @@ server <- function(id, data) {
 }
 
 if (interactive()) {
-  shinyApp(ui("app"), function(input, output) server("app", data = record))
+  shinyApp(ui("app"), function(input, output) server("app", data = game_record))
 }
