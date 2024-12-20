@@ -14,17 +14,14 @@ book <- collection("database")$data$book
 music <- collection("database")$data$music
 game <- collection("database")$data$game
 set.seed(100)
-# record <- movie |>
-#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
-#   dplyr::slice_sample(n = 1)
-# record <- book |>
-#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
-#   dplyr::slice_sample(n = 1)
-# record <- music |>
-#   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
-#   dplyr::slice_sample(n = 1)
-record <- game |>
-  # dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
+movie_record <- movie |>
+  dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
+  dplyr::slice_sample(n = 1)
+book_record <- book |>
+  dplyr::slice_sample(n = 1)
+music_record <- music |>
+  dplyr::slice_sample(n = 1)
+game_record <- game |>
   dplyr::slice_sample(n = 1)
 
 
