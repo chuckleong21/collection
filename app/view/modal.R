@@ -1,34 +1,22 @@
-library(shiny)
-library(shiny.fluent)
-
 box::use(
   stringr[str_replace, str_split],
-  purrr[reduce, map, map2],
-  app/logic/collection[collection],
+  assertthat[assert_that],
+  purrr[reduce, map],
+  shiny[div, uiOutput],
+  shiny.react[JS],
+  shiny.fluent[Dialog, DialogFooter, TextField.shinyInput, SpinButton.shinyInput, 
+               Dropdown.shinyInput, ActionButton.shinyInput, PrimaryButton.shinyInput, 
+               DefaultButton.shinyInput, Text],
   app/logic/api[api],
-  app/view/grid_view[genre_dropdown, region_dropdown, category_dropdown],
+  app/logic/argscheck[...],
+  app/view/grid_view[genre_dropdown, region_dropdown, category_dropdown]
 )
 
-movie <- collection("database")$data$movie
-book <- collection("database")$data$book
-music <- collection("database")$data$music
-game <- collection("database")$data$game
-set.seed(100)
-movie_record <- movie |>
-  dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
-  dplyr::slice_sample(n = 1)
-book_record <- book |>
-  dplyr::slice_sample(n = 1)
-music_record <- music |>
-  dplyr::slice_sample(n = 1)
-game_record <- game |>
-  dplyr::slice_sample(n = 1)
-
-
-movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading = NULL, 
-                        widths = NULL, hidden = NULL, 
-                        dismissId = NULL, modal_props = list(), 
-                        footer_button = c("Update", "Cancel")) {
+#' @export
+record_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading = NULL, 
+                         widths = NULL, hidden = NULL, 
+                         dismissId = NULL, modal_props = list(), 
+                         footer_button = c("Update", "Cancel")) {
   
   # default arguments -------------------------------------------------------
   
@@ -42,19 +30,8 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
   
   # argument checks ---------------------------------------------------------
   
-  is_dialog_type <- function(x) {
-    is_scalar_numeric <- function(x) length(x) == 1 && is.numeric(x)
-    is_scalar_numeric(x) && x %in% 0:2
-  } 
-  is_valid_widths <- function(x) is.numeric(x) & (length(x) >=1 & length(x) <=2)
-  assertthat::on_failure(is_dialog_type) <- function(call, env) {
-    sprintf("DialogType is either 0, 1, 2, not %s", deparse(call$x))
-  }
-  assertthat::on_failure(is_valid_widths) <- function(call, env) {
-    sprintf("Maximum length of 'widths' is %g instead of 2", length(call$x))
-  }
-  assertthat::assert_that(is_dialog_type(dialog_type))
-  assertthat::assert_that(is_valid_widths(widths))
+  assert_that(is_dialog_type(dialog_type))
+  assert_that(is_valid_widths(widths))
   
   # static data -------------------------------------------------------------
   
@@ -72,8 +49,8 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
     "  Shiny.setInputValue('", ns(dismissId),"', Math.random());",
     "}"
   ))
-  assertthat::assert_that(inherits(onDismiss, "JS_EVAL"), 
-                          msg = "onDismiss is not a JavaScript Evaluation")
+  assert_that(inherits(onDismiss, "JS_EVAL"), 
+              msg = "onDismiss is not a JavaScript Evaluation")
   
   Dialog(
     minWidth = min(widths), maxWidth = max(widths),
@@ -81,7 +58,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
     dialogContentProps = dialogContentProps, 
     modalProps = modal_props,
     
-    # modal contents ----------------------------------------------------------
+    # dialog contents ----------------------------------------------------------
     
     div(class = "record-grid", 
         # subject_id --------------------------------------------------------------
@@ -230,6 +207,7 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
           )
         )
     ),
+    # footer ------------------------------------------------------------------
     DialogFooter(
       PrimaryButton.shinyInput(ns("dialogUpdate"), text = footer_button[1]),
       DefaultButton.shinyInput(ns("dialogCancel"), text = footer_button[2])
@@ -237,73 +215,4 @@ movie_modal <- function(data, ns, dialog_type = NULL, heading = NULL, subheading
   )
 }
 
-ui <- function(id) {
-  ns <- NS(id)
-  tagList(
-    tags$head(
-      tags$style(
-        ".record-grid {
-        display:grid;grid-template-columns:repeat(2, 1fr);grid-template-rows:repeat(8, 1fr);gap:10px;padding:10px;
-        }
-        .record-grid-item {padding:10px;}
-        "
-      )
-    ),
-    div(
-      DefaultButton.shinyInput(ns("showDialog"), text = "Open dialog"),
-      reactOutput(ns("reactDialog"))
-    )
-  )
-}
 
-
-server <- function(id, data) {
-  moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    
-    isDialogOpen <- reactiveVal(FALSE)
-    imgFile <- reactiveVal(NULL)
-    output$reactDialog <- renderReact({
-      movie_modal(data = data, 
-                  ns = ns, 
-                  dialog_type = 0, 
-                  hidden = !isDialogOpen(), 
-                  widths = c(500, 960))
-    })
-    
-    observeEvent(input$showDialog, isDialogOpen(TRUE))
-    observeEvent(input$hideDialog, isDialogOpen(FALSE))
-    observeEvent(input$dialogUpdate, isDialogOpen(FALSE))
-    observeEvent(input$dialogCancel, isDialogOpen(FALSE))
-    
-    output$modalCover <- renderUI({
-      img_src <- ifelse(is.null(imgFile()), 
-                        sprintf("static/cover/%s/%s.%s", data$type, data$subject_id, tools::file_ext(data$cover)),
-                        imgFile())
-      Image(src = img_src, style = list(`max-width` = "100px"), alt = data$title)
-      # tags$img(src = img_src, alt = data$title, style = "max-width:100px;")
-    })
-    observeEvent(input$modalImgUpload, {
-      f <- tryCatch(file.choose(), error = function(e) NULL)
-      if(!is.null(f)) {
-        f <- stringr::str_extract(f, "static.+") |> 
-          stringr::str_replace_all("\\\\", "/") 
-        imgFile(f)
-      }
-    })
-    output$modalTimestamp <- renderUI({
-      if(is.null(imgFile())) {
-        TextField.shinyInput(inputId = ns("modalCreatedAt"), ariaLabel = "CreatedAt", label = "Created At", 
-                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = as.character(data$created_at))
-      } else {
-        current_time <- Sys.time() |> as.character() |> stringr::str_replace("\\..+", "")
-        TextField.shinyInput(inputId = ns("modalUpdatedAt"), ariaLabel = "UpdatedAt", label = "Updated At", 
-                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = current_time)
-      }
-    })
-  })
-}
-
-if (interactive()) {
-  shinyApp(ui("app"), function(input, output) server("app", data = game_record))
-}
