@@ -4,7 +4,7 @@ box::use(
   rvest[html_element, html_attr, html_text2], 
   purrr[reduce, map, map_vec],
   utils[head],
-  blogdown[read_toml],
+  configr[read.config],
   lubridate[as_date, year]
 )
 
@@ -15,7 +15,7 @@ box::use(
 #' @export
 headers <- function(toml = NULL) {
   toml <- toml %||% "app/static/headers.toml"
-  headers <- read_toml(toml)$headers
+  headers <- read.config(toml)$headers
   map(headers$Cookie, ~list(
     Accept = headers$Accept, 
     `User-Agent` = headers$`User-Agent`,
