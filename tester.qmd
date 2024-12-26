@@ -13,25 +13,20 @@ execute:
 library(shiny)
 library(shiny.fluent)
 box::use(app/logic/collection[collection])
-```
-
-```{r}
-#| label: dialog dependencies
-#| message: false
-#| warning: false
-box::use(
-  app/view/modal[record_modal]
-)
-```
-
-```{r}
-#| label: record dialog
-#| message: false
 Collection <- collection("database")
 movie <- Collection$data$movie
 book  <- Collection$data$book
 music <- Collection$data$music
 game  <- Collection$data$game
+```
+
+```{r}
+#| label: record dialog
+#| message: false
+box::use(
+  app/view/modal
+)
+
 set.seed(100)
 movie_record <- movie |>
   dplyr::filter(stringr::str_count(region, "\\s") >= 1) |>
@@ -42,67 +37,61 @@ music_record <- music |>
   dplyr::slice_sample(n = 1)
 game_record <- game |>
   dplyr::slice_sample(n = 1)
+
+button_ui <- function(id) {
+  ns <- NS(id)
+  DefaultButton.shinyInput(ns("showDialog"), text = "Show Dialog")
+}
+
+button_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    reactive(input$showDialog)
+  })
+}
+
 ui <- function(id) {
   ns <- NS(id)
-  tagList(
-    tags$head(
-      tags$link(rel = "stylesheet", href = "static/css/app.min.css")
-    ),
-    div(
-      DefaultButton.shinyInput(ns("showDialog"), text = "Open dialog"),
-      reactOutput(ns("reactDialog"))
-    )
+  div(
+    button_ui(ns("btn")),
+    modal$ui(ns("dialog"))
   )
 }
 
-server <- function(id, data) {
+server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    
     isDialogOpen <- reactiveVal(FALSE)
-    imgFile <- reactiveVal(NULL)
-    output$reactDialog <- renderReact({
-      record_modal(data = data, 
-                  ns = ns, 
-                  dialog_type = 0, 
-                  hidden = !isDialogOpen(), 
-                  widths = c(500, 960))
+    cover <- reactiveVal(NULL)
+    
+    buttonMod <- button_server("btn")
+    dialogInputs <- modal$server("dialog", 
+                                 data = movie_record, 
+                                 isOpen = isDialogOpen, 
+                                 coverPath = cover)
+    
+    observeEvent(buttonMod(), {
+      isDialogOpen(TRUE)
     })
     
-    observeEvent(input$showDialog, isDialogOpen(TRUE))
-    observeEvent(input$hideDialog, isDialogOpen(FALSE))
-    observeEvent(input$dialogUpdate, isDialogOpen(FALSE))
-    observeEvent(input$dialogCancel, isDialogOpen(FALSE))
-    
-    output$modalCover <- renderUI({
-      img_src <- ifelse(is.null(imgFile()), 
-                        sprintf("static/cover/%s/%s.%s", data$type, data$subject_id, tools::file_ext(data$cover)),
-                        imgFile())
-      Image(src = img_src, style = list(`max-width` = "100px"), alt = data$title)
-      # tags$img(src = img_src, alt = data$title, style = "max-width:100px;")
+    observeEvent(dialogInputs$dismiss(), {
+      isDialogOpen(FALSE)
     })
-    observeEvent(input$modalImgUpload, {
-      f <- tryCatch(file.choose(), error = function(e) NULL)
-      if(!is.null(f)) {
-        f <- stringr::str_extract(f, "static.+") |> 
-          stringr::str_replace_all("\\\\", "/") 
-        imgFile(f)
-      }
+    observeEvent(dialogInputs$update(), {
+      isDialogOpen(FALSE)
     })
-    output$modalTimestamp <- renderUI({
-      if(is.null(imgFile())) {
-        TextField.shinyInput(inputId = ns("modalCreatedAt"), ariaLabel = "CreatedAt", label = "Created At", 
-                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = as.character(data$created_at))
-      } else {
-        current_time <- Sys.time() |> as.character() |> stringr::str_replace("\\..+", "")
-        TextField.shinyInput(inputId = ns("modalUpdatedAt"), ariaLabel = "UpdatedAt", label = "Updated At", 
-                             borderless = TRUE, underlined = TRUE, disabled = TRUE, value = current_time)
-      }
+    observeEvent(dialogInputs$cancel(), {
+      isDialogOpen(FALSE)
     })
   })
 }
 
 if (interactive()) {
-  shinyApp(ui("app"), function(input, output) server("app", data = book_record))
+  shinyApp(ui("app"), function(input, output) server("app"))
 }
+```
+
+```{r}
+#| label: heatmap
+#| message: false
+box::use(app/view/heatmap[heatmap])
+heatmap(Collection)
 ```
