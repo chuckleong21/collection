@@ -80,6 +80,23 @@ svg {
     list-style: outside none none;
     line-height: 32px;
 }
+
+.edit {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width:2rem;
+    padding-bottom:15%;
+}
+
+.edit button {
+    visibility: hidden;
+}
+
+.edit:hover  button {
+    visibility: visible;
+}
+
 .record-grid {
   display:grid;
   grid-template-columns:repeat(2, 1fr);
@@ -89,4 +106,20 @@ svg {
 }
 .record-grid-item {
   padding:10px;
+}
+
+.search {
+  position: relative;
+  display: inline-block;
+}
+.search input {
+  padding-right: 40px;
+}
+.search button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
 }

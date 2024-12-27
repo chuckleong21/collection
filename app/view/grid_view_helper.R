@@ -4,6 +4,7 @@ box::use(
   lubridate[as_date],
   purrr[map, reduce],
   shiny[tags, tagList, div],
+  shiny.fluent[ActionButton.shinyInput],
   stringr[str_replace, str_c, str_split, str_which, str_replace_all],
   tidyr[unnest, separate],
   xfun[download_file],
@@ -267,8 +268,10 @@ divs <- function(..., class, flag_size = "big", ns) {
     ),
     "edit" = div(
       class = class, 
-      shiny.fluent::ActionButton.shinyInput(inputId = ns(sprintf("edit-%s", subject_id)), 
-                                            iconProps = list(iconName = "EditSolid12"), text = "")
+      ActionButton.shinyInput(inputId = ns(sprintf("edit-%s", subject_id)), 
+                                            iconProps = list(iconName = "EditSolid12"), text = ""),
+      ActionButton.shinyInput(inputId = ns(sprintf("delete-%s", subject_id)),
+                              iconProps = list(iconName = "Delete"))
     )
   )
 }
