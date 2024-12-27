@@ -33,10 +33,6 @@ movie <- newdb$data$movie
 
 #' @export
 ui <- function(id) {
-  countries <- stringr::str_split(movie$region, "\\s") |>
-    purrr::reduce(c) |>
-    na.omit() |> 
-    unique()
   ns <- shiny::NS(id)
   fluentPage(
     region_dropdown("region", "Region", multiple = TRUE),
