@@ -30,7 +30,7 @@ fetch.api <- function(api) {
 }
 fetch.douban <- function(x, header_toml = NULL, xpath = NULL) {
   header_toml <- header_toml %||% "app/static/headers.toml"
-  xpath <- xpath %||% read_toml("app/static/headers.toml")$xpaths$douban
+  xpath <- xpath %||% read_toml(header_toml)$xpaths$douban
   r <- request(x, header_toml = header_toml)
   h <- resp_body_html(r)
   
