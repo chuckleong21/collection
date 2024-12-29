@@ -59,6 +59,7 @@ gauge_path <- function(..., width = 150, height = 150, stroke = 6, animate = TRU
   
   class <- sprintf("path-%s", subject_id)
   dash <- sprintf("dash-%s", subject_id)
+  rating <- ifelse(is.na(rating), 0, rating)
   radius <- width / 2 - 5; circumference <- 2 * 3.14 * radius
   center_x <- center_y <- width / 2
   dasharray <- ifelse(rating != 0, (width / 2 - 5) * 2 * 3.14, 0)
