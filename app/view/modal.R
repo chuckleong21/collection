@@ -21,6 +21,17 @@ ui <- function(id) {
   reactOutput(ns("dialog"))
 }
 
+#' Record Dialog Server
+#' 
+#' @param id A string. Namespace ID
+#'
+#' @param data A single row of \code{data.frame} or \code{tibble}
+#' @param config Arguments passed to \code{Dialog} function
+#' @param modalProps A list of arguments passed to \code{modalProps} argument \cr
+#' \code{Dialog} function
+#' @param isOpen A reactive logical, initialized as FALSE
+#' @param coverPath A reactive character, initialized as NULL
+#'
 #' @export
 server <- function(id, data, config = NULL, modalProps = list(), isOpen, coverPath) {
   moduleServer(id, function(input, output, session) {
