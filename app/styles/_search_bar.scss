@@ -1,0 +1,15 @@
+.search {
+  position: relative;
+  display: inline-block;
+  input {
+    padding-right: 40px;
+  }
+  button {
+    position:absolute;
+    top: 0;
+    right: 0;
+    border: none;
+    background-color: transparent;
+    cursor:pointer;
+  }
+}

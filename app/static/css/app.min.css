@@ -1,109 +1,3 @@
-* {
-    padding: 0;
-    margin: 0;
-    font-family: "Noto Sans SC", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal
-}
-
-.item {
-    border-bottom: #bbb solid 1px;
-    margin-bottom: 0.5rem;
-    display: flex;
-    height: auto;
-    max-width: 750px;
-    gap: 1%;
-    align-items: end
-}
-
-svg {
-    min-width: 156px;
-    margin: 30px 0px 3px 0px;
-    padding-bottom: 10px
-}
-
-.item img {
-    max-width: 120px
-}
-
-.intro {
-    flex-grow: 1
-}
-
-.title {
-    background: none #f2f4f6;
-    padding-top: 10px;
-    padding-bottom: 1.5rem;
-    height: fit-content
-}
-
-.title * {
-    padding-right: 2px
-}
-
-.title a {
-    color: #3377aa;
-    font-family: copperplate;
-    font-size: 1.2rem;
-    text-decoration: none;
-    height: auto
-}
-
-.title a:hover {
-    color: white;
-    background-color: #37a
-}
-
-.meta {
-    display: flex;
-    gap: 1rem
-}
-
-.intro li {
-    list-style: outside none none;
-    padding-top: 0.5rem;
-    line-height: 1.8rem
-}
-
-.intro,
-.date {
-    clear: both;
-    display: flow-root;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    list-style: outside none none;
-    line-height: 32px
-}
-
-.edit {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 2rem;
-    padding-bottom: 15%
-}
-
-.edit button {
-    visibility: hidden
-}
-
-.edit:hover button {
-    visibility: visible
-}
-
-.record-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 10px;
-    padding: 10px
-}
-
-.record-grid-item {
-    padding: 10px
-}
-
 .search {
     position: relative;
     display: inline-block
@@ -118,6 +12,111 @@ svg {
     top: 0;
     right: 0;
     border: none;
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0);
     cursor: pointer
+}
+
+.record-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 10px;
+    padding: 10px
+}
+
+.record-grid .record-grid-item {
+    padding: 10px
+}
+
+.item {
+    border-bottom: #bbb solid 1px;
+    margin-bottom: .5rem;
+    display: flex;
+    height: auto;
+    max-width: 750px;
+    gap: 1%;
+    align-items: end
+}
+
+.item svg {
+    min-width: 156px;
+    margin: 30px 0 3px;
+    padding-bottom: 10px
+}
+
+.item .intro {
+    flex-grow: 1
+}
+
+.item .intro .title {
+    background: none #f2f4f6;
+    padding-top: 10px;
+    padding-bottom: 1.5rem;
+    height: fit-content
+}
+
+.item .intro .title * {
+    padding-right: 2px
+}
+
+.item .intro .title a {
+    color: #37a;
+    font-size: 1.2rem;
+    text-decoration: none;
+    height: auto
+}
+
+.item .intro .title a:hover {
+    color: #fff;
+    background-color: #37a
+}
+
+.item .intro .meta {
+    display: flex;
+    gap: 1rem
+}
+
+.item .intro .meta img {
+    max-width: 120px
+}
+
+.item .intro .meta li {
+    list-style: outside none none;
+    padding-top: .5rem;
+    line-height: 1.8rem
+}
+
+.item .intro .meta li .info,
+.item .intro .meta li .date {
+    clear: both;
+    display: flow-root;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    list-style: outside none none;
+    line-height: 32px
+}
+
+.item .edit {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 2rem;
+    padding-bottom: 15%
+}
+
+.item .edit button {
+    visibility: hidden
+}
+
+.item .edit:hover button {
+    visibility: hidden
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    font-family: "Noto Sans SC", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal
 }
