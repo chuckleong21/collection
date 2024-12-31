@@ -1,0 +1,42 @@
+$movie_fill: #0EA5B5;
+$book_fill: #327F3D;
+$game_fill: #F89F19;
+$music_fill: #E84D18;
+
+@mixin rotate($delay) {
+  animation: spin 1s linear forwards;
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  animation-delay: #{$delay}s;
+}
+
+@mixin spin($deg) {
+  @keyframes spin {
+    from {transform: rotate(#{$deg}deg)}
+    to {transform: rotate(0deg)}
+  }
+}
+
+.rotate-1 {
+  @include rotate(0);
+  fill: $movie_fill;
+    }
+@include spin(90);
+
+.rotate-2 {
+  @include rotate(1);
+  fill: $book_fill;
+  @include spin(90);
+}
+
+.rotate-3 {
+  @include rotate(2);
+  fill: $game_fill;
+  @include spin(90);
+}
+
+.rotate-4 {
+  @include rotate(3);
+  fill: $music_fill;
+  @include spin(90);
+}
