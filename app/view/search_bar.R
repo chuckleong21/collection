@@ -1,5 +1,13 @@
 box::use(app/logic/api[api], app/logic/fetch[fetch])
-library(future)
+box::use(
+  future[future, plan, multisession],
+  bslib[bind_task_button], 
+  DT[renderDataTable, dataTableOutput],
+  shiny[tags, div, uiOutput, renderUI, textOutput, renderText,
+        ExtendedTask, NS, moduleServer, reactive, observeEvent],
+  shiny.fluent[TextField.shinyInput, ActionButton.shinyInput],
+  shinycssloaders[withSpinner]
+)
 plan(multisession)
 
 search_field_ui <- function(id) {
@@ -35,6 +43,7 @@ search_button_server <- function(id) {
   })
 }
 
+#' @export
 ui <- function(id) {
   ns <- NS(id)
   tags$head(
@@ -48,6 +57,7 @@ ui <- function(id) {
   )
 }
 
+#' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -78,7 +88,7 @@ server <- function(id) {
         seed = TRUE
       )
     })
-    bslib::bind_task_button(fetchJob, ns("button-searchButton"))
+    bind_task_button(fetchJob, ns("button-searchButton"))
     
 
     # Invoke ExtendedTasks in a shiny module ----------------------------------------------------
@@ -97,8 +107,8 @@ server <- function(id) {
       } else {
         output$out <- renderUI({
           fetchJob$invoke(searchFieldValue())
-          DT::dataTableOutput(ns("table")) |> 
-            shinycssloaders::withSpinner(caption = "Fetching data from API...")
+          dataTableOutput(ns("table")) |> 
+            withSpinner(caption = "Fetching data from API...")
         })
         # The invoke will now be triggered by the bound button automatically
       }
@@ -121,5 +131,3 @@ server <- function(id) {
     })
   })
 }
-
-shinyApp(ui("app"), function(input, output) server("app"))
