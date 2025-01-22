@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module" src="https://unpkg.com/@fluentui/web-components"></script>
+    <link rel="stylesheet" href="../static/css/app.min.css">
+</head>
+
+<body>
+    <div class="grid-container">
+        <div class="header">
+            <svg width="50" height="50" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect wddth="48" height="48" fill="#F5F5F5"></rect>
+                <path class="rotate-1" d="M26 6C26 3.79086 27.7909 2 30 2H42C44.2091 2 46 3.79086 46 6V18C46 20.2091 44.2091 22 42 22H30C27.7909 22 26 20.2091 26 18V6Z"></path>
+                <rect class="rotate-2" x="2" y="2" width="20" height="20" rx="4"></rect>
+                <rect class="rotate-3" x="2" y="28" width="20" height="20" rx="4"></rect>
+                <rect class="rotate-4" x="26" y="28" width="20" height="20" rx="4"></rect>
+              </svg>
+              <div class="title">Home Page</div>
+              <div class="searchbar">
+                <div class="search">
+                    <div class="react-container" data-react-id="ujgawdczvpzjeiobcwwh"><div class="ms-TextField root-110"><div class="ms-TextField-wrapper"><div class="ms-TextField-fieldGroup fieldGroup-111"><input type="text" id="app-box-searchField" class="ms-TextField-field field-112" aria-invalid="false" value=""></div></div></div></div>
+                    <div class="react-container" data-react-id="hhphkyyirilwmevuhjjm"><button type="button" id="app-button-searchButton" class="ms-Button ms-Button--action ms-Button--command root-121" data-is-focusable="true"><span class="ms-Button-flexContainer flexContainer-122" data-automationid="splitbuttonprimary"><i data-icon-name="Search" aria-hidden="true" class="ms-Icon root-105 css-130 ms-Button-icon icon-124" style="font-family: FabricMDL2Icons;"></i></span></button></div>
+                    <div id="app-out" class="shiny-html-output shiny-bound-output recalculating" aria-live="polite"></div>
+                  </div>
+              </div>
+            </div>
+            <div class="sidenav">
+                <ul>
+                    <li>home</li>
+                    <li>movie</li>
+                    <li>music</li>
+                    <li>book</li>
+                    <li>game</li>
+                    <li>about</li>
+                </ul>
+                <div class="footer">footer</div>
+            </div>
+        <div class="main">main</div>
+    </div>
+</body>
+
+</html>
+
+<a onclick="const el = this.nextElementSibling; el.scrollBy({left: el.offsetWidth, behavior: 'smooth'});">
+    <i class="fa-solid fa-circle-right"></i>
+</a>

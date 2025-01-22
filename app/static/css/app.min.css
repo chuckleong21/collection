@@ -196,8 +196,8 @@
 .grid-container {
     display: grid;
     grid-template-columns: 320px 1fr;
-    grid-template-rows: 54px 1fr 45px;
-    grid-template-areas: "header header" "sidenav main" "footer footer";
+    grid-template-rows: 54px 1fr;
+    grid-template-areas: "header header" "sidenav main";
     height: 100vh
 }
 
@@ -214,18 +214,33 @@
     padding-left: 40px;
     padding-right: 32px;
     max-width: calc(100vw - 400px);
-    max-height: calc(100vh - 100px);
+    max-height: 100vh;
     overflow: auto
 }
 
 .grid-container .footer {
     grid-area: footer;
     background-color: #f3f2f1;
-    padding: 12px 10px
+    padding: 12px 10px;
+    max-width:375px;
+    z-index: 1;
 }
 
 .grid-container .sidenav {
     grid-area: sidenav;
     background-color: #fff;
-    padding: 25px
+    padding: 10px
 }
+
+.title {
+    padding: 0px 14px 0px 14px;
+    color: #737373;
+    margin: 6px 0px 6px 10px;
+    border-left: 1px solid darkgray;
+    width: 220px;
+    font-size:x-large;
+  }
+
+  .subtitle {
+    padding-bottom: 20px;
+  }

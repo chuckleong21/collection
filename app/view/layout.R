@@ -2,6 +2,10 @@ box::use(
   app/view/search_bar
 )
 
+box::use(
+  shiny.router[route_link]
+)
+
 logo <- div(
   class = "logo", 
   tags$svg(
@@ -18,18 +22,36 @@ logo <- div(
 
 # header ------------------------------------------------------------------
 
-header <- div(
-  class = "header", 
-  tags$svg(),
-  div(class = "title", Text(variant = "xLarge", title)),
-  div(class = "subtitle", Text(variant = "Large", subtitle)),
-  div(class = "search", search_bar$ui("search"))
-)
-
+header <- function(title, search) {
+  div(
+    class = "header", logo, 
+    Text(variant = "xLarge", title), 
+    search
+  )
+} 
 
 # sidenav -----------------------------------------------------------------
 
-sidenav <- "sidenav"
+navItems <- list(
+  list(name = "Home", url = route_link(""), key = "home", iconProps = list(iconName = "Home")),
+  list(name = "Movie", url = route_link("movie"), key = "movie", iconProps = list(iconName = "MyMoviesTV")),
+  list(name = "Music", url = "#!/music", key = "music", iconProps = list(iconName = "MusicInCollectionFill")),
+  list(name = "Books", url = "#!/book", key = "book", iconProps = list(iconName = "Library")),
+  list(name = "Games", url = "#!/game", key = "game", iconProps = list(iconName = "Game")),
+  list(name = "About", url = "#!/about", key = "about", iconProps = list(iconName = "InfoSolid"))
+)
+navStyles <- list(root = list(
+  height = "100%", 
+  boxSizng = "border-box", 
+  border = "1px solid #eee",
+  overflowY = "auto") 
+)
+initialSelectedKey <- "home"
+sidenav <- Nav(
+  groups = list(list(links = navItems)), 
+  initialSelectedKey = "home", 
+  styles = navStyles
+)
 
 
 # footer ------------------------------------------------------------------
@@ -40,8 +62,12 @@ footer <- "footer"
 # layout ------------------------------------------------------------------
 
 #' @export
-layout <- function(title, subtitle, mainUI) {
-  tags$body(
-    header, sidenav, mainUI, footer
+layout <- function(mainUI, ...) {
+  div(
+    class = "grid-container", 
+    div(class = "header", header(...)), 
+    div(class = "sidenav", sidenav,
+        div(class = "footer", footer)), 
+    div(class = "main", mainUI)
   )
 }
